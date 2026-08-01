@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Local scratch / throwaway verification scripts
+scratch/
+
 # Build output
 dist/
 *.tsbuildinfo
