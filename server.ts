@@ -36,7 +36,7 @@ app.use(express.json());
 // Types
 // ------------------------------------------------------------------
 
-interface SECData {
+export interface SECData {
   cik: string;
   recentFilings: { form: string; filingDate: string; description: string }[];
   xbrlFacts: {
@@ -49,7 +49,7 @@ interface SECData {
   };
 }
 
-interface ScreeningResult {
+export interface ScreeningResult {
   ticker: string;
   companyName?: string;
   sector?: string;
@@ -84,6 +84,58 @@ interface CacheEntry<T> {
 const yahooQuoteCache = new Map<string, CacheEntry<any>>();
 const yahooSummaryCache = new Map<string, CacheEntry<any>>();
 const secDataCache = new Map<string, CacheEntry<SECData | null>>();
+
+// ------------------------------------------------------------------
+// Exported Helpers for Testing
+// ------------------------------------------------------------------
+
+export function getMostRecentFull(concept: any): { val: number; end: string } | undefined {
+  if (!concept?.units) return undefined;
+  const units = concept.units['USD'] || concept.units['USD/shares'];
+  if (!units || !units.length) return undefined;
+  
+  // Prefer annual (10-K) filings for consistency and harden selection to true annual periods
+  let values = units.filter((u: any) => {
+    if (u.form !== '10-K') return false;
+    const isFY = u.fp === 'FY';
+    let isAnnualSpan = false;
+    if (u.start && u.end) {
+      const days = (new Date(u.end).getTime() - new Date(u.start).getTime()) / (1000 * 3600 * 24);
+      if (days >= 350 && days <= 380) isAnnualSpan = true;
+    }
+    return isFY || isAnnualSpan;
+  });
+  
+  // Fall back to quarterly (10-Q) if no annual data available
+  if (!values.length) {
+    values = units.filter((u: any) => u.form === '10-Q');
+  }
+  if (!values.length) return undefined;
+  
+  // Sort by end date descending to get most recent
+  values.sort((a: any, b: any) => new Date(b.end).getTime() - new Date(a.end).getTime());
+  return { val: values[0].val, end: values[0].end };
+}
+
+export function applyQuantitativeFilters(
+  config: { maxMarketCap: number; minEbitda: number; maxPeRatio: number; minRevenueGrowth: number },
+  metrics: { marketCapB: number; ebitdaMargin: number; peRatio: number; revGrowthPct: number },
+  baseResult: Partial<ScreeningResult>
+): Partial<ScreeningResult> | null {
+  if (config.maxMarketCap > 0 && metrics.marketCapB > config.maxMarketCap) {
+    return { ...baseResult, findings: `Screened out: Market Cap ($${metrics.marketCapB.toFixed(1)}B) exceeds $${config.maxMarketCap}B limit`, decision: '⚪ SCREENED OUT' };
+  }
+  if (config.minEbitda && metrics.ebitdaMargin < config.minEbitda) {
+    return { ...baseResult, findings: `Screened out: EBITDA Margin (${metrics.ebitdaMargin.toFixed(1)}%) below ${config.minEbitda}% minimum`, decision: '⚪ SCREENED OUT' };
+  }
+  if (config.maxPeRatio > 0 && metrics.peRatio > 0 && metrics.peRatio > config.maxPeRatio) {
+    return { ...baseResult, findings: `Screened out: P/E Ratio (${metrics.peRatio.toFixed(1)}) exceeds ${config.maxPeRatio}x maximum`, decision: '⚪ SCREENED OUT' };
+  }
+  if (config.minRevenueGrowth && metrics.revGrowthPct < config.minRevenueGrowth) {
+    return { ...baseResult, findings: `Screened out: Revenue Growth (${metrics.revGrowthPct.toFixed(1)}%) below ${config.minRevenueGrowth}% minimum`, decision: '⚪ SCREENED OUT' };
+  }
+  return null;
+}
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1000): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -174,36 +226,7 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
       const usGaap = factsData.facts?.['us-gaap'];
       
       if (usGaap) {
-        // Helper: extract the most recent value and its end date for a concept
-        // Video insight: some concepts are deprecated or sparse, so we try
-        // 10-K first (annual), fall back to 10-Q (quarterly) if needed
-        const getMostRecentFull = (concept: any): { val: number; end: string } | undefined => {
-          if (!concept?.units) return undefined;
-          const units = concept.units['USD'] || concept.units['USD/shares'];
-          if (!units || !units.length) return undefined;
-          
-          // Prefer annual (10-K) filings for consistency and harden selection to true annual periods
-          let values = units.filter((u: any) => {
-            if (u.form !== '10-K') return false;
-            const isFY = u.fp === 'FY';
-            let isAnnualSpan = false;
-            if (u.start && u.end) {
-              const days = (new Date(u.end).getTime() - new Date(u.start).getTime()) / (1000 * 3600 * 24);
-              if (days >= 350 && days <= 380) isAnnualSpan = true;
-            }
-            return isFY || isAnnualSpan;
-          });
-          
-          // Fall back to quarterly (10-Q) if no annual data available
-          if (!values.length) {
-            values = units.filter((u: any) => u.form === '10-Q');
-          }
-          if (!values.length) return undefined;
-          
-          // Sort by end date descending to get most recent
-          values.sort((a: any, b: any) => new Date(b.end).getTime() - new Date(a.end).getTime());
-          return { val: values[0].val, end: values[0].end };
-        };
+        // (getMostRecentFull helper has been lifted to module scope for testing)
 
         // Wrapper to keep compatibility with other extractions
         const getMostRecent = (concept: any): number | undefined => {
@@ -382,18 +405,8 @@ async function screenSingleTicker(ticker: string, config: {
   };
 
   // 3. Quantitative Filters — return SCREENED OUT instead of throwing
-  if (config.maxMarketCap > 0 && marketCapB > config.maxMarketCap) {
-    return { ...baseResult, findings: `Screened out: Market Cap ($${marketCapB.toFixed(1)}B) exceeds $${config.maxMarketCap}B limit`, decision: '⚪ SCREENED OUT' };
-  }
-  if (config.minEbitda && ebitdaMargin < config.minEbitda) {
-    return { ...baseResult, findings: `Screened out: EBITDA Margin (${ebitdaMargin.toFixed(1)}%) below ${config.minEbitda}% minimum`, decision: '⚪ SCREENED OUT' };
-  }
-  if (config.maxPeRatio > 0 && peRatio > 0 && peRatio > config.maxPeRatio) {
-    return { ...baseResult, findings: `Screened out: P/E Ratio (${peRatio.toFixed(1)}) exceeds ${config.maxPeRatio}x maximum`, decision: '⚪ SCREENED OUT' };
-  }
-  if (config.minRevenueGrowth && revGrowthPct < config.minRevenueGrowth) {
-    return { ...baseResult, findings: `Screened out: Revenue Growth (${revGrowthPct.toFixed(1)}%) below ${config.minRevenueGrowth}% minimum`, decision: '⚪ SCREENED OUT' };
-  }
+  const filterResult = applyQuantitativeFilters(config, { marketCapB, ebitdaMargin, peRatio, revGrowthPct }, baseResult);
+  if (filterResult) return filterResult as ScreeningResult;
 
   // 4. Fetch SEC EDGAR data (graceful fallback — never fails the pipeline)
   let secData: SECData | null = null;
@@ -661,4 +674,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
