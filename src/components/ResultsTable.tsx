@@ -51,7 +51,7 @@ export default function ResultsTable({ results }: ResultsTableProps) {
   });
 
   const exportCSV = () => {
-    const headers = ['Ticker', 'Company', 'Market Cap (B)', 'EBITDA Margin', 'P/E', 'Rev Growth', 'Score', 'Decision', 'Findings', 'Risk Factors'];
+    const headers = ['Ticker', 'Company', 'Market Cap (B)', 'EBITDA Margin', 'P/E', 'Rev Growth', 'Score', 'Decision', 'Findings', 'Risk Factors', 'Catalyst'];
     const csvRows = [headers.join(',')];
     
     results.forEach(r => {
@@ -65,7 +65,8 @@ export default function ResultsTable({ results }: ResultsTableProps) {
         r.score,
         `"${r.decision}"`,
         `"${r.findings?.replace(/"/g, '""') || ''}"`,
-        `"${r.riskFactors?.replace(/"/g, '""') || ''}"`
+        `"${r.riskFactors?.replace(/"/g, '""') || ''}"`,
+        `"${r.catalyst?.replace(/"/g, '""') || ''}"`
       ];
       csvRows.push(row.join(','));
     });
@@ -241,14 +242,21 @@ export default function ResultsTable({ results }: ResultsTableProps) {
                               <h5 className="text-emerald-400 text-xs font-bold mb-1 uppercase tracking-wider">Key Findings</h5>
                               <p className="text-[#ece9e4] leading-relaxed">{result.findings}</p>
                             </div>
-                            
+
+                            {result.catalyst && result.catalyst !== 'Not assessed.' && result.catalyst !== 'Unable to assess.' && (
+                              <div className="bg-amber-500/5 border border-amber-500/25 border-l-2 border-l-amber-500 p-3 rounded text-sm">
+                                <h5 className="text-amber-500 text-xs font-bold mb-1 uppercase tracking-wider">⚡ Catalyst — Why Now</h5>
+                                <p className="text-[#ece9e4] opacity-90 text-xs">{result.catalyst}</p>
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-4">
                               <div className="bg-rose-900/10 border border-rose-500/20 p-3 rounded text-sm">
                                 <h5 className="text-rose-400 text-xs font-bold mb-1 uppercase tracking-wider">Risk Factors</h5>
                                 <p className="text-[#d7d3cb] opacity-90 text-xs">{result.riskFactors || 'Not explicitly identified.'}</p>
                               </div>
-                              <div className="bg-blue-900/10 border border-blue-500/20 p-3 rounded text-sm">
-                                <h5 className="text-amber-400 text-xs font-bold mb-1 uppercase tracking-wider">Growth Drivers</h5>
+                              <div className="bg-emerald-900/10 border border-emerald-500/20 p-3 rounded text-sm">
+                                <h5 className="text-emerald-400 text-xs font-bold mb-1 uppercase tracking-wider">Growth Drivers</h5>
                                 <p className="text-[#d7d3cb] opacity-90 text-xs">{result.growthDrivers || 'Not explicitly identified.'}</p>
                               </div>
                             </div>
