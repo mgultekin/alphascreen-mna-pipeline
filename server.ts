@@ -358,6 +358,7 @@ async function screenSingleTicker(ticker: string, config: {
   let assetProfile: any = {};
   let financialData: any = {};
   let summaryDetail: any = {};
+  let defaultKeyStatistics: any = {};
   
   const cachedSummary = yahooSummaryCache.get(ticker);
   if (cachedSummary && Date.now() - cachedSummary.timestamp < YAHOO_CACHE_TTL) {
@@ -365,15 +366,17 @@ async function screenSingleTicker(ticker: string, config: {
     assetProfile = cachedSummary.data.assetProfile || {};
     financialData = cachedSummary.data.financialData || {};
     summaryDetail = cachedSummary.data.summaryDetail || {};
+    defaultKeyStatistics = cachedSummary.data.defaultKeyStatistics || {};
   } else {
     try {
       const summary = await withRetry(() => yahooFinance.quoteSummary(ticker, { 
-        modules: ['assetProfile', 'financialData', 'summaryDetail'] 
+        modules: ['assetProfile', 'financialData', 'summaryDetail', 'defaultKeyStatistics'] 
       })) as any;
       yahooSummaryCache.set(ticker, { data: summary, timestamp: Date.now() });
       assetProfile = summary.assetProfile || {};
       financialData = summary.financialData || {};
       summaryDetail = summary.summaryDetail || {};
+      defaultKeyStatistics = summary.defaultKeyStatistics || {};
     } catch (e) {
       console.warn(`Could not fetch full summary for ${ticker}`);
     }
@@ -386,6 +389,13 @@ async function screenSingleTicker(ticker: string, config: {
   const revGrowthPct = (financialData.revenueGrowth || 0) * 100;
   const companyName = quote.longName || quote.shortName || ticker;
   const rawProfile = assetProfile.longBusinessSummary || `No business summary available for ${ticker}.`;
+
+  const evToEbitda = defaultKeyStatistics.enterpriseToEbitda;
+  const evToSales = defaultKeyStatistics.enterpriseToRevenue;
+  let netDebtToEbitda: number | undefined;
+  if (financialData.ebitda && financialData.ebitda > 0 && financialData.totalDebt !== undefined && financialData.totalCash !== undefined) {
+    netDebtToEbitda = (financialData.totalDebt - financialData.totalCash) / financialData.ebitda;
+  }
 
   // Base result for screened-out companies
   const baseResult: ScreeningResult = {
@@ -458,6 +468,9 @@ Market Cap: $${marketCapB.toFixed(2)}B
 EBITDA Margin: ${ebitdaMargin.toFixed(1)}%
 P/E Ratio: ${peRatio ? peRatio.toFixed(1) : 'N/A'}
 Revenue Growth: ${revGrowthPct.toFixed(1)}%
+EV/EBITDA: ${evToEbitda != null ? evToEbitda.toFixed(1) + 'x' : 'N/A'}
+EV/Sales: ${evToSales != null ? evToSales.toFixed(1) + 'x' : 'N/A'}
+Net Debt/EBITDA: ${netDebtToEbitda != null ? netDebtToEbitda.toFixed(1) + 'x' : 'N/A'}
 
 --- Business Profile ---
 ${rawProfile}
