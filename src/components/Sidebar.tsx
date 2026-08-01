@@ -18,6 +18,12 @@ export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, o
   const [thesisId, setThesisId] = useState('default');
   const [showKey, setShowKey] = useState(false);
 
+  // Conservative upper-bound AI cost (Gemini Flash) per company that reaches the AI
+  // stage. Real cost is lower — not every ticker passes the quant filters.
+  const COST_PER_COMPANY = 0.002;
+  const tickerCount = config.tickers.split(',').map(t => t.trim()).filter(Boolean).length;
+  const estCostUsd = tickerCount * COST_PER_COMPANY;
+
   // Selecting a sector preset seeds tickers, criteria, filters, and the AI
   // analyst persona. Everything stays editable afterwards.
   const applyPreset = (id: string) => {
@@ -227,6 +233,16 @@ export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, o
       </div>
 
       <div className="p-6 border-t border-[#2b2b31] shrink-0 bg-[#0d0d0f]">
+        <div className="mb-3 flex items-center justify-between text-[11px] font-mono text-[#585550]">
+          <span>{tickerCount} ticker{tickerCount === 1 ? '' : 's'}</span>
+          {apiKey.trim() ? (
+            <span title="Upper bound — only tickers passing the quant filters reach the AI stage">
+              est. AI cost ≤ <span className="text-amber-500/90">${estCostUsd.toFixed(2)}</span>
+            </span>
+          ) : (
+            <span>quant only · free</span>
+          )}
+        </div>
         <button
           onClick={onRun}
           disabled={isRunning || !config.tickers.trim()}
