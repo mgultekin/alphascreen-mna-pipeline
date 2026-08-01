@@ -215,6 +215,17 @@ function App() {
             </div>
           )}
 
+          {!isDemo && results.some(r => r.decision?.includes('ERROR') && /crumb|too many requests|429|failed to get/i.test(r.findings || '')) && (
+            <div className="mb-6 p-4 rounded-lg bg-rose-900/20 border border-rose-500/30 text-rose-200 text-sm animate-fade-in flex items-start">
+              <span className="mr-2">🛰️</span>
+              <span>
+                <b className="text-rose-100">Live market data is being rate-limited.</b> Yahoo Finance throttles requests from shared cloud servers (like this demo host),
+                so live screening may fail here. Click <b>Load sample results</b> in the sidebar for a full real run, or run the app locally (residential IPs aren't throttled).
+                SEC EDGAR and the AI analysis are unaffected — this only limits the Yahoo quote step.
+              </span>
+            </div>
+          )}
+
           {!isDemo && results.some(r => r.aiStatus === 'badkey') && (
             <div className="mb-6 p-4 rounded-lg bg-rose-900/20 border border-rose-500/30 text-rose-200 text-sm animate-fade-in flex items-start">
               <span className="mr-2">🔑</span>
