@@ -163,8 +163,18 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
           const units = concept.units['USD'] || concept.units['USD/shares'];
           if (!units || !units.length) return undefined;
           
-          // Prefer annual (10-K) filings for consistency
-          let values = units.filter((u: any) => u.form === '10-K');
+          // Prefer annual (10-K) filings for consistency and harden selection to true annual periods
+          let values = units.filter((u: any) => {
+            if (u.form !== '10-K') return false;
+            const isFY = u.fp === 'FY';
+            let isAnnualSpan = false;
+            if (u.start && u.end) {
+              const days = (new Date(u.end).getTime() - new Date(u.start).getTime()) / (1000 * 3600 * 24);
+              if (days >= 350 && days <= 380) isAnnualSpan = true;
+            }
+            return isFY || isAnnualSpan;
+          });
+          
           // Fall back to quarterly (10-Q) if no annual data available
           if (!values.length) {
             values = units.filter((u: any) => u.form === '10-Q');
