@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HelpCircle } from 'lucide-react';
 import { ScreeningConfig, ScreeningResult } from './types';
 import { DEFAULT_PRESET } from './presets';
 import { DEMO_RESULTS } from './demoData';
@@ -6,8 +7,10 @@ import Sidebar from './components/Sidebar';
 import DashboardCards from './components/DashboardCards';
 import ResultsTable from './components/ResultsTable';
 import ProgressIndicator from './components/ProgressIndicator';
+import OnboardingOverlay from './components/OnboardingOverlay';
 
 const API_KEY_STORAGE = 'alphascreen_gemini_key';
+const ONBOARDED_STORAGE = 'alphascreen_onboarded';
 
 function App() {
   const [config, setConfig] = useState<ScreeningConfig>({
@@ -34,6 +37,13 @@ function App() {
   const [isDemo, setIsDemo] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'results'>('dashboard');
   const [progress, setProgress] = useState({ current: 0, total: 0, statusText: '', currentTicker: '' });
+
+  // Show the welcome overlay on first visit only (dismissal persists in the browser).
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => !localStorage.getItem(ONBOARDED_STORAGE));
+  const dismissOnboarding = () => {
+    localStorage.setItem(ONBOARDED_STORAGE, '1');
+    setShowOnboarding(false);
+  };
 
   // Load bundled sample results — lets visitors explore the full UI without a key.
   const loadDemo = () => {
@@ -139,6 +149,9 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0e1a] text-[#f1f5f9]">
+      {showOnboarding && (
+        <OnboardingOverlay onClose={dismissOnboarding} onLoadDemo={loadDemo} />
+      )}
       <Sidebar
         config={config}
         setConfig={setConfig}
@@ -154,18 +167,28 @@ function App() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
             AlphaScreen
           </h1>
-          <div className="flex space-x-1 bg-[#1a1f35] p-1 rounded-lg border border-[#1e293b]">
-            <button 
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
-              onClick={() => setActiveTab('dashboard')}
+          <div className="flex items-center space-x-3">
+            <div className="flex space-x-1 bg-[#1a1f35] p-1 rounded-lg border border-[#1e293b]">
+              <button
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                Dashboard
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
+                onClick={() => setActiveTab('results')}
+              >
+                Pipeline
+              </button>
+            </div>
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1a1f35] border border-transparent hover:border-[#1e293b] transition-colors"
+              aria-label="How it works"
+              title="How it works"
             >
-              Dashboard
-            </button>
-            <button 
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
-              onClick={() => setActiveTab('results')}
-            >
-              Pipeline
+              <HelpCircle className="w-5 h-5" />
             </button>
           </div>
         </header>

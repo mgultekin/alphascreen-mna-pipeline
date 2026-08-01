@@ -38,14 +38,27 @@ instead of ~$391B because Apple reports under
 - **Done when:** AAPL, MSFT, and a few other large caps report their headline
   consolidated revenue.
 
+### 🔲 3b. Harden revenue period selection (follow-up to #3)
+`getMostRecentFull` in `server.ts` picks the first entry at the latest fiscal
+year-end without explicitly confirming it's the 12-month annual period. It
+resolves correctly for all tickers tested so far (the across-concept
+largest-value tiebreak covers it), but a company whose latest concept only
+carries a Q4 (3-month) value could be under-reported.
+- Filter to annual-duration entries — prefer `fp === 'FY'`, or a
+  `start`→`end` span of roughly 350–380 days — before taking the value.
+- **Done when:** the reducer provably returns a 12-month figure, with a quick
+  note in the PR showing it still matches AAPL/MSFT/SFM/KR.
+
 ---
 
 ## Next — polish & robustness
 
-### 🔲 4. First-visit onboarding overlay
+### ✅ 4. First-visit onboarding overlay
 A short, dismissible intro for first-time visitors explaining what the tool does,
 the BYO-key model, and the "Load sample results" option. Persist dismissal in
 `localStorage`. Improves the portfolio first impression.
+_Done: `src/components/OnboardingOverlay.tsx`, shown on first visit, re-openable
+via the header "?" button._
 
 ### 🔲 5. Result caching
 Cache Yahoo + SEC responses (in-memory with TTL, or Redis) so re-runs and repeated
