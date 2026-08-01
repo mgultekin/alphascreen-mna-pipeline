@@ -443,6 +443,10 @@ Your M&A Fit Score (1-10) should reflect:
 - 3-4: Weak fit, limited strategic alignment
 - 1-2: No meaningful fit with the stated criteria
 
+For example:
+- A "9" means: "Exceptional fit; the target's core product perfectly fills our capability gap, and their 40% margin proves operational excellence."
+- A "3" means: "Weak fit; the target operates in an adjacent space but lacks the requested enterprise focus, while growth is stagnating."
+
 Be rigorous and evidence-based. Only reference information explicitly stated in the provided data. Do not infer or assume facts not present.`;
 
   const userContent = `Ticker: ${ticker}
@@ -505,6 +509,9 @@ ${secContext}`;
         systemInstruction: systemPrompt,
         responseMimeType: "application/json",
         responseSchema: responseSchema,
+        temperature: 0,
+        topP: 0.1,
+        topK: 1,
       }
     });
 
