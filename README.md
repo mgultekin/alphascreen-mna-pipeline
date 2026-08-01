@@ -1,7 +1,6 @@
 # AlphaScreen — AI-Powered M&A Deal Sourcing Pipeline
 
-<!-- LIVE DEMO: after the first Render deploy, replace the line below with the real URL. -->
-> **🚀 Live demo:** _deploying — URL coming here (see [Deployment](#deployment))._ · No sign-up needed — click **Load sample results**.
+> **🚀 [Live demo →](https://alphascreen-mna-pipeline.onrender.com)** · No sign-up needed — click **"Load sample results"** to explore a real screening run instantly. _(First load may take ~30s while the free instance wakes.)_
 
 An automated screening tool that combines **quantitative financial data** from multiple sources with **qualitative NLP analysis** (Google Gemini) to identify and rank potential M&A acquisition targets.
 
