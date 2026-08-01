@@ -70,8 +70,20 @@ interface ScreeningResult {
 }
 
 // ------------------------------------------------------------------
-// Helper Functions
+// Helper Functions & Caching
 // ------------------------------------------------------------------
+
+const YAHOO_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const SEC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const yahooQuoteCache = new Map<string, CacheEntry<any>>();
+const yahooSummaryCache = new Map<string, CacheEntry<any>>();
+const secDataCache = new Map<string, CacheEntry<SECData | null>>();
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1000): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -136,9 +148,16 @@ async function getCompanyCIK(ticker: string): Promise<string | null> {
 
 // Fetch XBRL financial facts + filing metadata from SEC EDGAR
 async function fetchSECData(ticker: string): Promise<SECData | null> {
+  const cached = secDataCache.get(ticker);
+  if (cached && Date.now() - cached.timestamp < SEC_CACHE_TTL) {
+    console.log(`[cache] hit ${ticker} (SEC EDGAR)`);
+    return cached.data;
+  }
+
   const cik = await getCompanyCIK(ticker);
   if (!cik) {
     console.warn(`[SEC] No CIK found for ticker ${ticker}`);
+    secDataCache.set(ticker, { data: null, timestamp: Date.now() });
     return null;
   }
 
@@ -265,7 +284,9 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
     }
 
     console.log(`[SEC] ✓ ${ticker}: CIK=${cik}, filings=${recentFilings.length}, revenue=${xbrlFacts.revenue ? '$' + (xbrlFacts.revenue/1e6).toFixed(0) + 'M' : 'N/A'}`);
-    return { cik, recentFilings, xbrlFacts };
+    const result = { cik, recentFilings, xbrlFacts };
+    secDataCache.set(ticker, { data: result, timestamp: Date.now() });
+    return result;
   } catch (error) {
     console.error(`[SEC] Error fetching data for ${ticker}:`, error);
     return null;
@@ -288,7 +309,16 @@ async function screenSingleTicker(ticker: string, config: {
   const dataSources = ['Yahoo Finance'];
   
   // 1. Fetch Yahoo Finance data (quote + full summary for EBITDA/profile)
-  const quote = await withRetry(() => yahooFinance.quote(ticker)) as any;
+  let quote: any;
+  const cachedQuote = yahooQuoteCache.get(ticker);
+  if (cachedQuote && Date.now() - cachedQuote.timestamp < YAHOO_CACHE_TTL) {
+    console.log(`[cache] hit ${ticker} (Yahoo Quote)`);
+    quote = cachedQuote.data;
+  } else {
+    quote = await withRetry(() => yahooFinance.quote(ticker)) as any;
+    yahooQuoteCache.set(ticker, { data: quote, timestamp: Date.now() });
+  }
+
   // Delisted/renamed tickers (e.g. after an acquisition) can return no quote.
   // Fail cleanly with a readable message instead of a raw TypeError downstream.
   if (!quote) {
@@ -305,15 +335,25 @@ async function screenSingleTicker(ticker: string, config: {
   let assetProfile: any = {};
   let financialData: any = {};
   let summaryDetail: any = {};
-  try {
-    const summary = await withRetry(() => yahooFinance.quoteSummary(ticker, { 
-      modules: ['assetProfile', 'financialData', 'summaryDetail'] 
-    })) as any;
-    assetProfile = summary.assetProfile || {};
-    financialData = summary.financialData || {};
-    summaryDetail = summary.summaryDetail || {};
-  } catch (e) {
-    console.warn(`Could not fetch full summary for ${ticker}`);
+  
+  const cachedSummary = yahooSummaryCache.get(ticker);
+  if (cachedSummary && Date.now() - cachedSummary.timestamp < YAHOO_CACHE_TTL) {
+    console.log(`[cache] hit ${ticker} (Yahoo Summary)`);
+    assetProfile = cachedSummary.data.assetProfile || {};
+    financialData = cachedSummary.data.financialData || {};
+    summaryDetail = cachedSummary.data.summaryDetail || {};
+  } else {
+    try {
+      const summary = await withRetry(() => yahooFinance.quoteSummary(ticker, { 
+        modules: ['assetProfile', 'financialData', 'summaryDetail'] 
+      })) as any;
+      yahooSummaryCache.set(ticker, { data: summary, timestamp: Date.now() });
+      assetProfile = summary.assetProfile || {};
+      financialData = summary.financialData || {};
+      summaryDetail = summary.summaryDetail || {};
+    } catch (e) {
+      console.warn(`Could not fetch full summary for ${ticker}`);
+    }
   }
 
   // 2. Compute/extract quantitative metrics
