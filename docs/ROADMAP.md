@@ -70,9 +70,9 @@ the BYO-key model, and the "Load sample results" option. Persist dismissal in
 _Done: `src/components/OnboardingOverlay.tsx`, shown on first visit, re-openable
 via the header "?" button._
 
-### 🔲 5. Result caching
-Cache Yahoo + SEC responses (in-memory with TTL, or Redis) so re-runs and repeated
-tickers are instant and gentler on rate limits. Natural precursor to scaling.
+### ✅ 5. Result caching
+In-memory TTL cache for Yahoo (1h) + SEC (24h) responses; cache-hit logging;
+Gemini deliberately uncached. Done in `server.ts`.
 
 ### 🔲 6. Automated tests
 Add a lightweight test setup (e.g. Vitest) covering the quant-filter logic, the
@@ -100,6 +100,47 @@ results. Precursor to any multi-user / accounts work.
 The backend already accepts a server-side fallback key. Build on that: a metered
 mode where users without their own key can run a limited number of AI screens
 (rate-limited, usage-tracked). Requires auth + billing — scope carefully.
+
+---
+
+## Product & growth (owner's list)
+
+### 🔲 13. Product & scoring audit — how to attract more users
+Analyze the data → scoring → prediction system from two lenses: a **senior AI
+engineer** (data quality, model choice, prompt design, scoring robustness,
+calibration, evaluation) and a **senior M&A analyst** (does the score reflect
+real deal logic? what signals are missing — leverage, multiples, ownership,
+catalysts?). Produce a prioritized set of concrete improvements that would make
+the tool more useful and differentiated.
+- **Done when:** a written audit exists with ranked, actionable recommendations
+  (impact vs. effort), feeding new roadmap items.
+
+### 🔲 14. User accounts + saved analyses
+Let users log in, save screening runs, and revisit past analyses. Builds on the
+persistence work in #9.
+- Auth: a hosted option (Clerk / Auth.js / Supabase Auth) to avoid handrolling
+  passwords; support Google sign-in.
+- Persist each run (config + results) per user; add a "History" view.
+- Keep the app usable **without** login (current flow stays the default).
+- **Done when:** a logged-in user can save a run and reopen it later.
+
+### 🔲 15. Show estimated analysis cost before running
+Display an estimated AI cost before/at run time, so users understand what a screen
+will consume against their own key.
+- Estimate = (tickers that would reach the AI stage) × per-call Gemini cost
+  (~$0.002 with Flash). Since the pass-rate isn't known until data is fetched,
+  show an **upper bound** ("up to ~$0.04 for 20 tickers") and the model used.
+- Surface it near the Execute button and/or in the progress indicator.
+- **Done when:** the user sees a clear cost estimate tied to their ticker count.
+
+### 🔲 16. Support / donate link
+Add a "Buy Me a Coffee" (or GitHub Sponsors / Ko-fi) link so the project can
+accept optional support.
+- No code platform needed: create an account (e.g. buymeacoffee.com), get your
+  page URL, then add a badge to `README.md` and a small link in the app footer.
+- GitHub Sponsors alternative: enable in repo Settings → add a `.github/FUNDING.yml`
+  to show a **Sponsor** button on the repo.
+- **Done when:** a support link is live in the README and/or the app.
 
 ---
 
