@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScreeningConfig } from '../types';
 import { PRESETS, DEFAULT_PRESET, THESIS_ANGLES } from '../presets';
-import { Settings, Play, ChevronDown, Activity, DollarSign, Layers, KeyRound, Eye, EyeOff, FlaskConical } from 'lucide-react';
+import { Settings, Play, ChevronDown, Activity, DollarSign, Layers, KeyRound, Eye, EyeOff, FlaskConical, X } from 'lucide-react';
 
 interface SidebarProps {
   config: ScreeningConfig;
@@ -11,9 +11,11 @@ interface SidebarProps {
   apiKey: string;
   onApiKeyChange: (key: string) => void;
   onLoadDemo: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, onApiKeyChange, onLoadDemo }: SidebarProps) {
+export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, onApiKeyChange, onLoadDemo, isOpen, onClose }: SidebarProps) {
   const [presetId, setPresetId] = useState(DEFAULT_PRESET.id);
   const [thesisId, setThesisId] = useState('default');
   const [showKey, setShowKey] = useState(false);
@@ -59,12 +61,15 @@ export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, o
   };
 
   return (
-    <div className="w-80 h-full flex flex-col bg-[#0d0d0f] border-r border-[#2b2b31] text-[#8a867d]">
+    <div className={`fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] h-full flex flex-col bg-[#0d0d0f] border-r border-[#2b2b31] text-[#8a867d] transform transition-transform duration-200 ease-out md:static md:max-w-none md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-6 border-b border-[#2b2b31] flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
           <div className="w-1.5 h-3.5 bg-amber-500 animate-pulse"></div>
           <span className="font-bold text-[#ece9e4] text-base font-mono tracking-[0.2em]">ALPHA<span className="text-amber-500">SCREEN</span></span>
         </div>
+        <button onClick={onClose} className="md:hidden p-1 text-[#585550] hover:text-white" aria-label="Close controls">
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8">

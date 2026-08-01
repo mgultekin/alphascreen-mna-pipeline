@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Menu } from 'lucide-react';
 import { ScreeningConfig, ScreeningResult } from './types';
 import { DEFAULT_PRESET } from './presets';
 import { DEMO_RESULTS } from './demoData';
@@ -37,6 +37,12 @@ function App() {
   const [isDemo, setIsDemo] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'results'>('dashboard');
   const [progress, setProgress] = useState({ current: 0, total: 0, statusText: '', currentTicker: '' });
+
+  // Mobile: the sidebar becomes a slide-in drawer toggled from the header.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = () => setSidebarOpen(false);
+  const runAndClose = () => { setSidebarOpen(false); runScreening(); };
+  const demoAndClose = () => { setSidebarOpen(false); loadDemo(); };
 
   // Show the welcome overlay on first visit only (dismissal persists in the browser).
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => !localStorage.getItem(ONBOARDED_STORAGE));
@@ -152,31 +158,48 @@ function App() {
       {showOnboarding && (
         <OnboardingOverlay onClose={dismissOnboarding} onLoadDemo={loadDemo} />
       )}
+
+      {/* Mobile drawer backdrop */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={closeSidebar} aria-hidden="true" />
+      )}
+
       <Sidebar
         config={config}
         setConfig={setConfig}
-        onRun={runScreening}
+        onRun={runAndClose}
         isRunning={isRunning}
         apiKey={apiKey}
         onApiKeyChange={saveApiKey}
-        onLoadDemo={loadDemo}
+        onLoadDemo={demoAndClose}
+        isOpen={sidebarOpen}
+        onClose={closeSidebar}
       />
-      
+
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header className="flex items-center justify-between px-8 py-6 border-b border-[#2b2b31] bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-10">
-          <h1 className="flex items-center gap-2 text-xl font-bold font-mono tracking-[0.2em] text-[#ece9e4]">
-            <span className="text-amber-500">▮</span>ALPHA<span className="text-amber-500">SCREEN</span>
-          </h1>
-          <div className="flex items-center space-x-3">
+        <header className="flex items-center justify-between px-4 md:px-8 py-4 md:py-6 border-b border-[#2b2b31] bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-2 -ml-1 rounded-md text-[#8a867d] hover:text-white border border-[#2b2b31]"
+              aria-label="Open controls"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="hidden sm:flex items-center gap-2 text-base md:text-xl font-bold font-mono tracking-[0.15em] md:tracking-[0.2em] text-[#ece9e4]">
+              <span className="text-amber-500">▮</span>ALPHA<span className="text-amber-500">SCREEN</span>
+            </h1>
+          </div>
+          <div className="flex items-center space-x-2 md:space-x-3">
             <div className="flex space-x-1 bg-[#16161a] p-1 rounded-lg border border-[#2b2b31]">
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
+                className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
                 onClick={() => setActiveTab('dashboard')}
               >
                 Dashboard
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
+                className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
                 onClick={() => setActiveTab('results')}
               >
                 Pipeline
@@ -193,7 +216,7 @@ function App() {
           </div>
         </header>
 
-        <div className="p-8 flex-1 max-w-7xl mx-auto w-full">
+        <div className="p-4 md:p-8 flex-1 max-w-7xl mx-auto w-full">
           {isRunning && (
             <div className="mb-8">
               <ProgressIndicator 
