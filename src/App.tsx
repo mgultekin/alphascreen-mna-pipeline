@@ -148,7 +148,7 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0e1a] text-[#f1f5f9]">
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0c] text-[#ece9e4]">
       {showOnboarding && (
         <OnboardingOverlay onClose={dismissOnboarding} onLoadDemo={loadDemo} />
       )}
@@ -163,20 +163,20 @@ function App() {
       />
       
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header className="flex items-center justify-between px-8 py-6 border-b border-[#1e293b] bg-[#0a0e1a]/80 backdrop-blur-md sticky top-0 z-10">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-            AlphaScreen
+        <header className="flex items-center justify-between px-8 py-6 border-b border-[#2b2b31] bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-10">
+          <h1 className="flex items-center gap-2 text-xl font-bold font-mono tracking-[0.2em] text-[#ece9e4]">
+            <span className="text-amber-500">▮</span>ALPHA<span className="text-amber-500">SCREEN</span>
           </h1>
           <div className="flex items-center space-x-3">
-            <div className="flex space-x-1 bg-[#1a1f35] p-1 rounded-lg border border-[#1e293b]">
+            <div className="flex space-x-1 bg-[#16161a] p-1 rounded-lg border border-[#2b2b31]">
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
                 onClick={() => setActiveTab('dashboard')}
               >
                 Dashboard
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#222845] text-white' : 'text-[#94a3b8] hover:text-white'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#1f1f24] text-white' : 'text-[#8a867d] hover:text-white'}`}
                 onClick={() => setActiveTab('results')}
               >
                 Pipeline
@@ -184,7 +184,7 @@ function App() {
             </div>
             <button
               onClick={() => setShowOnboarding(true)}
-              className="p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1a1f35] border border-transparent hover:border-[#1e293b] transition-colors"
+              className="p-2 rounded-lg text-[#8a867d] hover:text-white hover:bg-[#16161a] border border-transparent hover:border-[#2b2b31] transition-colors"
               aria-label="How it works"
               title="How it works"
             >
@@ -206,10 +206,10 @@ function App() {
           )}
 
           {isDemo && (
-            <div className="mb-6 p-4 rounded-lg bg-blue-900/20 border border-blue-500/30 text-blue-200 text-sm animate-fade-in flex items-start">
-              <span className="mr-2">🔎</span>
+            <div className="mb-6 p-4 rounded-md bg-amber-500/5 border-l-2 border-amber-500 border border-[#2b2b31] text-[#c9c4ba] text-sm animate-fade-in flex items-start prose-sans">
+              <span className="mr-2 font-mono text-amber-500">◈</span>
               <span>
-                <b className="text-blue-100">Sample data</b> — a saved food-retail screening run, shown so you can explore the full interface without a key.
+                <b className="text-amber-500 font-mono">SAMPLE DATA</b> — a saved food-retail screening run, shown so you can explore the full interface without a key.
                 Add your own Gemini API key in the sidebar and hit <b>Execute Pipeline</b> to run a live screen on any tickers and sector.
               </span>
             </div>

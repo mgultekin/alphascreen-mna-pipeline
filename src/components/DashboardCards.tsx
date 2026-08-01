@@ -9,10 +9,10 @@ interface DashboardCardsProps {
 export default function DashboardCards({ results }: DashboardCardsProps) {
   if (results.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-[#1e293b] rounded-xl bg-[#111827]">
-        <BarChart className="w-12 h-12 text-[#64748b] mb-4" />
-        <h3 className="text-[#f1f5f9] font-medium mb-1">No Data Available</h3>
-        <p className="text-[#94a3b8] text-sm">Run a screening to see your executive dashboard</p>
+      <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-[#2b2b31] rounded-xl bg-[#101012]">
+        <BarChart className="w-12 h-12 text-[#585550] mb-4" />
+        <h3 className="text-[#ece9e4] font-medium mb-1">No Data Available</h3>
+        <p className="text-[#8a867d] text-sm">Run a screening to see your executive dashboard</p>
       </div>
     );
   }
@@ -44,68 +44,68 @@ export default function DashboardCards({ results }: DashboardCardsProps) {
     <div className="space-y-8 animate-fade-in">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-blue-500">
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-[#8a867d]">
             <BarChart3 className="w-16 h-16" />
           </div>
-          <p className="text-[#94a3b8] text-sm font-medium mb-1">Total Screened</p>
+          <p className="text-[#8a867d] text-sm font-medium mb-1">Total Screened</p>
           <p className="text-3xl font-bold text-white">{totalScreened}</p>
-          <div className="w-full h-1 bg-blue-500/20 absolute bottom-0 left-0">
-             <div className="h-full bg-blue-500 w-full" />
+          <div className="w-full h-1 bg-[#2b2b31] absolute bottom-0 left-0">
+             <div className="h-full bg-[#585550] w-full" />
           </div>
         </div>
         
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6 relative overflow-hidden">
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500">
             <Filter className="w-16 h-16" />
           </div>
-          <p className="text-[#94a3b8] text-sm font-medium mb-1">Passed Filters</p>
+          <p className="text-[#8a867d] text-sm font-medium mb-1">Passed Filters</p>
           <p className="text-3xl font-bold text-white">{passedFilters}</p>
           <div className="w-full h-1 bg-amber-500/20 absolute bottom-0 left-0">
              <div className="h-full bg-amber-500" style={{width: `${(passedFilters/totalScreened)*100}%`}} />
           </div>
         </div>
         
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-emerald-500">
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500">
             <Target className="w-16 h-16" />
           </div>
-          <p className="text-[#94a3b8] text-sm font-medium mb-1">Deep Dive Targets</p>
+          <p className="text-[#8a867d] text-sm font-medium mb-1">Deep Dive Targets</p>
           <p className="text-3xl font-bold text-white">{deepDiveTargets}</p>
           <div className="w-full h-1 bg-emerald-500/20 absolute bottom-0 left-0">
              <div className="h-full bg-emerald-500" style={{width: `${(deepDiveTargets/totalScreened)*100}%`}} />
           </div>
         </div>
         
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-purple-500">
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500">
             <TrendingUp className="w-16 h-16" />
           </div>
-          <p className="text-[#94a3b8] text-sm font-medium mb-1">Avg M&A Score</p>
+          <p className="text-[#8a867d] text-sm font-medium mb-1">Avg M&A Score</p>
           <p className="text-3xl font-bold text-white">{avgScore}</p>
-          <div className="w-full h-1 bg-purple-500/20 absolute bottom-0 left-0">
-             <div className="h-full bg-purple-500" style={{width: `${(parseFloat(avgScore as string)/10)*100}%`}} />
+          <div className="w-full h-1 bg-amber-500/20 absolute bottom-0 left-0">
+             <div className="h-full bg-amber-500" style={{width: `${(parseFloat(avgScore as string)/10)*100}%`}} />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Pipeline Funnel */}
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6">
-          <h3 className="text-[#f1f5f9] font-medium mb-6">Pipeline Conversion</h3>
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6">
+          <h3 className="text-[#ece9e4] font-medium mb-6">Pipeline Conversion</h3>
           <div className="space-y-4">
             <div className="flex flex-col">
-              <div className="flex justify-between text-xs mb-1 text-[#94a3b8]">
+              <div className="flex justify-between text-xs mb-1 text-[#8a867d]">
                 <span>Total Evaluated</span>
                 <span>{totalScreened} (100%)</span>
               </div>
-              <div className="h-8 w-full bg-blue-500/20 rounded flex items-center justify-center">
-                 <div className="h-full bg-blue-600/50 w-full rounded" />
+              <div className="h-8 w-full bg-[#2b2b31] rounded flex items-center justify-center">
+                 <div className="h-full bg-[#4a4a52] w-full rounded" />
               </div>
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="w-3/4 flex justify-between text-xs mb-1 text-[#94a3b8]">
+              <div className="w-3/4 flex justify-between text-xs mb-1 text-[#8a867d]">
                 <span>Passed Quant</span>
                 <span>{passedFilters} ({Math.round(passedFilters/totalScreened*100) || 0}%)</span>
               </div>
@@ -115,7 +115,7 @@ export default function DashboardCards({ results }: DashboardCardsProps) {
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="w-1/2 flex justify-between text-xs mb-1 text-[#94a3b8]">
+              <div className="w-1/2 flex justify-between text-xs mb-1 text-[#8a867d]">
                 <span>Shortlisted</span>
                 <span>{deepDiveTargets} ({Math.round(deepDiveTargets/totalScreened*100) || 0}%)</span>
               </div>
@@ -127,20 +127,20 @@ export default function DashboardCards({ results }: DashboardCardsProps) {
         </div>
 
         {/* Score Distribution */}
-        <div className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-6">
-          <h3 className="text-[#f1f5f9] font-medium mb-6">Score Distribution</h3>
+        <div className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-6">
+          <h3 className="text-[#ece9e4] font-medium mb-6">Score Distribution</h3>
           <div className="h-48 flex items-end space-x-4">
              <div className="flex-1 flex flex-col items-center group">
                <div className="w-full bg-rose-500/80 rounded-t transition-all group-hover:bg-rose-400" style={{height: `${(scoreBands.low / Math.max(1, validScores.length)) * 100}%`, minHeight: scoreBands.low > 0 ? '20px' : '0'}} />
-               <span className="text-xs text-[#94a3b8] mt-2 group-hover:text-[#f1f5f9]">1-3 ({scoreBands.low})</span>
+               <span className="text-xs text-[#8a867d] mt-2 group-hover:text-[#ece9e4]">1-3 ({scoreBands.low})</span>
              </div>
              <div className="flex-1 flex flex-col items-center group">
                <div className="w-full bg-amber-500/80 rounded-t transition-all group-hover:bg-amber-400" style={{height: `${(scoreBands.med / Math.max(1, validScores.length)) * 100}%`, minHeight: scoreBands.med > 0 ? '20px' : '0'}} />
-               <span className="text-xs text-[#94a3b8] mt-2 group-hover:text-[#f1f5f9]">4-6 ({scoreBands.med})</span>
+               <span className="text-xs text-[#8a867d] mt-2 group-hover:text-[#ece9e4]">4-6 ({scoreBands.med})</span>
              </div>
              <div className="flex-1 flex flex-col items-center group">
                <div className="w-full bg-emerald-500/80 rounded-t transition-all group-hover:bg-emerald-400" style={{height: `${(scoreBands.high / Math.max(1, validScores.length)) * 100}%`, minHeight: scoreBands.high > 0 ? '20px' : '0'}} />
-               <span className="text-xs text-[#94a3b8] mt-2 group-hover:text-[#f1f5f9]">7-10 ({scoreBands.high})</span>
+               <span className="text-xs text-[#8a867d] mt-2 group-hover:text-[#ece9e4]">7-10 ({scoreBands.high})</span>
              </div>
           </div>
         </div>
@@ -149,20 +149,20 @@ export default function DashboardCards({ results }: DashboardCardsProps) {
       {/* Top Picks */}
       {topPicks.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-[#f1f5f9] mb-4">Top AI Recommendations</h3>
+          <h3 className="text-xl font-semibold text-[#ece9e4] mb-4">Top AI Recommendations</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topPicks.map((pick, i) => (
-              <div key={i} className="bg-[#1a1f35] border border-[#1e293b] rounded-xl p-5 border-l-4 border-l-emerald-500 hover:bg-[#222845] transition-colors cursor-pointer">
+              <div key={i} className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-5 border-l-4 border-l-emerald-500 hover:bg-[#1f1f24] transition-colors cursor-pointer">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h4 className="text-lg font-bold text-white">{pick.ticker}</h4>
-                    <p className="text-xs text-[#94a3b8] truncate">{pick.companyName || pick.sector}</p>
+                    <p className="text-xs text-[#8a867d] truncate">{pick.companyName || pick.sector}</p>
                   </div>
                   <div className="bg-emerald-500/20 text-emerald-400 text-sm font-bold px-2.5 py-1 rounded">
                     {pick.score}/10
                   </div>
                 </div>
-                <p className="text-sm text-[#f1f5f9] line-clamp-3 text-ellipsis opacity-80 leading-relaxed">
+                <p className="text-sm text-[#ece9e4] line-clamp-3 text-ellipsis opacity-80 leading-relaxed">
                   {pick.findings}
                 </p>
               </div>
