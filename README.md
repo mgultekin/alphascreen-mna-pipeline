@@ -1,5 +1,8 @@
 # AlphaScreen — AI-Powered M&A Deal Sourcing Pipeline
 
+<!-- LIVE DEMO: after the first Render deploy, replace the line below with the real URL. -->
+> **🚀 Live demo:** _deploying — URL coming here (see [Deployment](#deployment))._ · No sign-up needed — click **Load sample results**.
+
 An automated screening tool that combines **quantitative financial data** from multiple sources with **qualitative NLP analysis** (Google Gemini) to identify and rank potential M&A acquisition targets.
 
 Built as a case study demonstrating how AI can accelerate the deal sourcing process in capital markets — reducing initial screening from 40-60 analyst hours to under 30 seconds.
@@ -103,6 +106,19 @@ AlphaScreen is **bring-your-own-key**. No key is required to explore it:
 ## Deployment
 
 The app builds to a single Node server that serves the static frontend and the API — deployable to any host that runs Node (Render, Railway, Fly.io, a VPS, etc.).
+
+### Deploy to Render (one-click via Blueprint)
+
+This repo includes a [`render.yaml`](render.yaml) blueprint, so setup is automatic:
+
+1. Push to GitHub (already done if you're reading this on GitHub).
+2. On [Render](https://render.com): **New +** → **Blueprint** → connect this repository.
+3. Render reads `render.yaml` and provisions a free web service (build `npm install && npm run build`, start `npm start`, health check `/`). Click **Apply**.
+4. Wait for the first build (~2–3 min). Your app is live at `https://<service-name>.onrender.com`.
+
+Leave `GEMINI_API_KEY` **unset** — the app is bring-your-own-key and the keyless demo works out of the box. (Free instances sleep after inactivity, so the first request after idle takes ~30s to wake.)
+
+### Any Node host (manual)
 
 ```bash
 npm install      # installs deps (build needs devDependencies)

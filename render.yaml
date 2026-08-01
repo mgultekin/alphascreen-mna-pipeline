@@ -1,0 +1,20 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: on Render, "New +" → "Blueprint" → connect this repo. Render reads this
+# file and provisions the service automatically.
+services:
+  - type: web
+    name: alphascreen-mna-pipeline
+    runtime: node
+    plan: free
+    region: frankfurt          # closest to EU; change if you prefer (e.g. oregon)
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true           # redeploy automatically on every push to main
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # GEMINI_API_KEY is intentionally NOT set — the app is bring-your-own-key
+      # (visitors paste their key in the UI). Add it here later only if you want
+      # a server-side fallback / hosted-credits key.

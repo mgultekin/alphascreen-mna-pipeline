@@ -9,10 +9,13 @@ Status legend: 🔲 not started · 🟡 in progress · ✅ done
 
 ## Now — high value, well-scoped
 
-### 🔲 1. Deploy + live demo link
-Deploy the app to a persistent-Node host (Render / Railway / Fly.io) and add a
-**Live Demo** link + badge to the top of `README.md`.
-- Build: `npm install && npm run build`; Start: `npm start`; host injects `PORT`.
+### 🟡 1. Deploy + live demo link
+Deploy the app to a persistent-Node host and add a **Live Demo** link to the top
+of `README.md`.
+- Config ready: [`render.yaml`](../render.yaml) blueprint, `.node-version`, and
+  `engines` pin. Clean build → start verified locally.
+- Remaining: connect the repo on Render (New → Blueprint → Apply), then paste the
+  live URL into the README placeholder.
 - Leave `GEMINI_API_KEY` **unset** on the host (bring-your-own-key); the keyless
   demo mode must work for visitors.
 - **Done when:** the URL loads, "Load sample results" works with no key, and a
