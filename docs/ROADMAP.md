@@ -9,17 +9,24 @@ Status legend: 🔲 not started · 🟡 in progress · ✅ done
 
 ## Now — high value, well-scoped
 
-### 🟡 1. Deploy + live demo link
-Deploy the app to a persistent-Node host and add a **Live Demo** link to the top
-of `README.md`.
-- Config ready: [`render.yaml`](../render.yaml) blueprint, `.node-version`, and
-  `engines` pin. Clean build → start verified locally.
-- Remaining: connect the repo on Render (New → Blueprint → Apply), then paste the
-  live URL into the README placeholder.
-- Leave `GEMINI_API_KEY` **unset** on the host (bring-your-own-key); the keyless
-  demo mode must work for visitors.
-- **Done when:** the URL loads, "Load sample results" works with no key, and a
-  live BYO-key run succeeds.
+### ✅ 1. Deploy + live demo link
+Deployed to Render via [`render.yaml`](../render.yaml) blueprint; live at
+https://alphascreen-mna-pipeline.onrender.com with the link in the README.
+Demo mode works fully. Live screening is limited on the host — see #12.
+
+### 🔲 12. Cloud-friendly market-data source (live mode on the deploy)
+On cloud hosts, Yahoo Finance 429s the server's IP (`Failed to get crumb`), so
+live screening fails on Render even though demo mode works. Local runs are fine
+(residential IP). For live mode to work on the deploy, add a datacenter-friendly
+quantitative source:
+- Integrate an API that doesn't IP-block (e.g. Financial Modeling Prep, Finnhub,
+  or Alpha Vantage free tier) as an alternative/fallback to Yahoo for market cap,
+  EBITDA margin, P/E, revenue growth, and the business summary.
+- Likely needs its own API key (server-side, or add to the bring-your-own-key
+  flow). Keep Yahoo as the local-dev default.
+- Interim: the UI now shows a clear "market data rate-limited" banner steering
+  visitors to the sample demo (done).
+- **Done when:** a live screen returns real quant data on the deployed site.
 
 ### 🔲 2. Automate ticker sourcing via SEC SIC codes
 Today the sector ticker lists in `src/presets.ts` are hand-curated. SEC EDGAR
