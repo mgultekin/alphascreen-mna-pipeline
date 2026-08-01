@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/mgultekin/alphascreen-mna-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/mgultekin/alphascreen-mna-pipeline/actions/workflows/ci.yml)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/mgultekin)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/mgultekin)
 
 > **🚀 [Live demo →](https://alphascreen-mna-pipeline.onrender.com)** · No sign-up needed — click **"Load sample results"** to explore a real screening run instantly. _(First load may take ~30s while the free instance wakes.)_
 

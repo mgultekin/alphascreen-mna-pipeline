@@ -255,6 +255,14 @@ export default function Sidebar({ config, setConfig, onRun, isRunning, apiKey, o
           <FlaskConical className="w-4 h-4 mr-2" />
           Load sample results
         </button>
+        <a
+          href="https://www.buymeacoffee.com/mgultekin"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 block text-center text-[11px] font-mono tracking-wide text-[#585550] hover:text-amber-500 transition-colors"
+        >
+          ☕ Support this project
+        </a>
       </div>
     </div>
   );

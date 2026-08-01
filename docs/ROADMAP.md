@@ -112,16 +112,16 @@ unmeasured; the prompt has a rubric but no anchors; it lacks real deal metrics
 (EV/EBITDA, Net Debt/EBITDA), peer-relative scoring, and catalysts. Spawned
 tasks #17–#19 below.
 
-### 🔲 17. Scoring reproducibility + rubric anchors (audit #1, #2)
+### ✅ 17. Scoring reproducibility + rubric anchors (audit #1, #2)
 Make the fit score stable and better-calibrated (highest-leverage, low effort):
 set the Gemini call to `temperature: 0`; add 1–2 few-shot anchor examples (a
 clear 9 and a clear 3, with reasoning) to the system prompt so the 1–10 scale is
 consistent across companies. `server.ts` only.
 - **Done when:** the same ticker + criteria scores identically on repeat runs.
 
-### 🔲 18. Real deal metrics (audit — M&A lens)
-Add the valuation/leverage signals a real screen needs: EV/EBITDA, EV/Sales, and
-Net Debt/EBITDA (from Yahoo + SEC) into the filters and the AI context. Consider
+### 🟡 18. Real deal metrics (audit — M&A lens)
+EV/EBITDA, EV/Sales, and Net Debt/EBITDA now flow into the **AI prompt context**
+(done, PR #10). Remaining: expose them as optional UI hard-stop filters and add
 peer-relative scoring within the sector cohort.
 
 ### 🔲 19. Catalyst signal ("why now")
@@ -152,7 +152,7 @@ will consume against their own key.
 - Surface it near the Execute button and/or in the progress indicator.
 - **Done when:** the user sees a clear cost estimate tied to their ticker count.
 
-### 🔲 16. Support / donate link
+### ✅ 16. Support / donate link
 Add a "Buy Me a Coffee" (or GitHub Sponsors / Ko-fi) link so the project can
 accept optional support.
 - No code platform needed: create an account (e.g. buymeacoffee.com), get your
