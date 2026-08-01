@@ -105,15 +105,34 @@ mode where users without their own key can run a limited number of AI screens
 
 ## Product & growth (owner's list)
 
-### 🔲 13. Product & scoring audit — how to attract more users
-Analyze the data → scoring → prediction system from two lenses: a **senior AI
-engineer** (data quality, model choice, prompt design, scoring robustness,
-calibration, evaluation) and a **senior M&A analyst** (does the score reflect
-real deal logic? what signals are missing — leverage, multiples, ownership,
-catalysts?). Produce a prioritized set of concrete improvements that would make
-the tool more useful and differentiated.
-- **Done when:** a written audit exists with ranked, actionable recommendations
-  (impact vs. effort), feeding new roadmap items.
+### ✅ 13. Product & scoring audit — how to attract more users
+Delivered: a two-lens audit (senior AI engineer + senior M&A analyst) with a
+ranked impact/effort table. Top findings: the score is non-deterministic and
+unmeasured; the prompt has a rubric but no anchors; it lacks real deal metrics
+(EV/EBITDA, Net Debt/EBITDA), peer-relative scoring, and catalysts. Spawned
+tasks #17–#19 below.
+
+### 🔲 17. Scoring reproducibility + rubric anchors (audit #1, #2)
+Make the fit score stable and better-calibrated (highest-leverage, low effort):
+set the Gemini call to `temperature: 0`; add 1–2 few-shot anchor examples (a
+clear 9 and a clear 3, with reasoning) to the system prompt so the 1–10 scale is
+consistent across companies. `server.ts` only.
+- **Done when:** the same ticker + criteria scores identically on repeat runs.
+
+### 🔲 18. Real deal metrics (audit — M&A lens)
+Add the valuation/leverage signals a real screen needs: EV/EBITDA, EV/Sales, and
+Net Debt/EBITDA (from Yahoo + SEC) into the filters and the AI context. Consider
+peer-relative scoring within the sector cohort.
+
+### 🔲 19. Catalyst signal ("why now")
+Light NLP pass over recent filings/news for triggers (management change,
+strategic review, activist stake, spin-off) — the differentiator that turns a
+list into a pipeline.
+
+### 🔲 14. User accounts + saved analyses
+Let users log in, save screening runs, and revisit past analyses. Builds on the
+persistence work in #9.
+- Auth: a hosted option (Clerk / Auth.js / Supabase Auth) to avoid handrolling
 
 ### 🔲 14. User accounts + saved analyses
 Let users log in, save screening runs, and revisit past analyses. Builds on the
