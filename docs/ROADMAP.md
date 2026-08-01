@@ -28,7 +28,7 @@ assembles a candidate universe from SIC codes instead of a fixed list.
 - Keep the curated presets as a fast default; make auto-sourcing additive.
 - **Done when:** a user can generate a sector universe without typing tickers.
 
-### 🔲 3. Fix SEC XBRL revenue extraction (headline figure)
+### ✅ 3. Fix SEC XBRL revenue extraction (headline figure)
 `getMostRecent` in `server.ts` picks the first matching revenue concept, which
 resolves a **non-headline** figure for some large caps (e.g. AAPL shows ~$266B
 instead of ~$391B because Apple reports under
