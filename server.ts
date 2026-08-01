@@ -47,6 +47,8 @@ export interface SECData {
     operatingIncome?: number;
     stockholdersEquity?: number;
   };
+  recentEventCount?: number;
+  recentEventDates?: string[];
 }
 
 export interface ScreeningResult {
@@ -62,6 +64,7 @@ export interface ScreeningResult {
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;
+  catalyst?: string;
   decision: string;
   rawProfile?: string;
   secData?: SECData;
@@ -283,6 +286,9 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
     const subRes = await fetchWithRateLimit(subUrl, { headers: SEC_HEADERS });
     
     let recentFilings: SECData['recentFilings'] = [];
+    let recentEventCount = 0;
+    const recentEventDates: string[] = [];
+    
     if (subRes.ok) {
       const subData = await subRes.json();
       const recent = subData.filings?.recent || {};
@@ -291,15 +297,31 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
       const desc = recent.primaryDocDescription || [];
       const accNums = recent.accessionNumber || [];
       
-      // Extract the 5 most recent 10-K and 10-Q filings
+      const nowMs = Date.now();
+      const DAYS_120_MS = 120 * 24 * 60 * 60 * 1000;
+      
       for (let i = 0; i < forms.length; i++) {
-        if (forms[i] === '10-K' || forms[i] === '10-Q') {
-          recentFilings.push({ 
-            form: forms[i], 
-            filingDate: dates[i], 
-            description: desc[i] || `${forms[i]} filing`,
-          });
-          if (recentFilings.length >= 5) break;
+        const formDate = new Date(dates[i]);
+        if (forms[i] === '8-K') {
+          if (!isNaN(formDate.getTime()) && (nowMs - formDate.getTime() <= DAYS_120_MS)) {
+            recentEventCount++;
+            if (recentEventDates.length < 3) {
+              recentEventDates.push(dates[i]);
+            }
+          }
+        } else if (forms[i] === '10-K' || forms[i] === '10-Q') {
+          if (recentFilings.length < 5) {
+            recentFilings.push({ 
+              form: forms[i], 
+              filingDate: dates[i], 
+              description: desc[i] || `${forms[i]} filing`,
+            });
+          }
+        }
+        
+        // Optional optimization: stop when we have enough 10-K/10-Q and we've gone past 120 days
+        if (recentFilings.length >= 5 && (!isNaN(formDate.getTime()) && (nowMs - formDate.getTime() > DAYS_120_MS))) {
+          break;
         }
       }
     } else {
@@ -307,7 +329,7 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
     }
 
     console.log(`[SEC] ✓ ${ticker}: CIK=${cik}, filings=${recentFilings.length}, revenue=${xbrlFacts.revenue ? '$' + (xbrlFacts.revenue/1e6).toFixed(0) + 'M' : 'N/A'}`);
-    const result = { cik, recentFilings, xbrlFacts };
+    const result = { cik, recentFilings, xbrlFacts, recentEventCount, recentEventDates };
     secDataCache.set(ticker, { data: result, timestamp: Date.now() });
     return result;
   } catch (error) {
@@ -436,7 +458,8 @@ Operating Income: ${secData.xbrlFacts.operatingIncome ? '$' + (secData.xbrlFacts
 Net Income: ${secData.xbrlFacts.netIncome ? '$' + (secData.xbrlFacts.netIncome / 1e6).toFixed(0) + 'M' : 'N/A'}
 Total Assets: ${secData.xbrlFacts.totalAssets ? '$' + (secData.xbrlFacts.totalAssets / 1e6).toFixed(0) + 'M' : 'N/A'}
 Stockholders Equity: ${secData.xbrlFacts.stockholdersEquity ? '$' + (secData.xbrlFacts.stockholdersEquity / 1e6).toFixed(0) + 'M' : 'N/A'}
-Latest Filing: ${secData.recentFilings[0]?.form || 'N/A'} (${secData.recentFilings[0]?.filingDate || 'N/A'})` : '';
+Latest Filing: ${secData.recentFilings[0]?.form || 'N/A'} (${secData.recentFilings[0]?.filingDate || 'N/A'})
+Recent 8-K Filings (last 120 days): ${secData.recentEventCount || 0} events${secData.recentEventCount ? ' (Dates: ' + (secData.recentEventDates?.join(', ') || '') + ')' : ''}` : '';
 
   // The analyst persona is driven by the selected screening preset, so the AI
   // reasons through the right sector lens (grocery vs. SaaS vs. banking, etc.).
@@ -456,6 +479,8 @@ Your M&A Fit Score (1-10) should reflect:
 For example:
 - A "9" means: "Exceptional fit; the target's core product perfectly fills our capability gap, and their 40% margin proves operational excellence."
 - A "3" means: "Weak fit; the target operates in an adjacent space but lacks the requested enterprise focus, while growth is stagnating."
+
+Also name any concrete "why now" catalyst from the available data (recent 8-K activity, management change, strategic review, activist stake, spin-off, etc.) in ONE sentence, or return "None identified."
 
 Be rigorous and evidence-based. Only reference information explicitly stated in the provided data. Do not infer or assume facts not present.`;
 
@@ -485,8 +510,9 @@ ${secContext}`;
       growth_drivers: { type: Type.STRING, description: "Key growth catalysts (1-2 sentences)" },
       fit_score: { type: Type.INTEGER, description: "M&A fit score from 1 to 10" },
       action: { type: Type.STRING, description: "Either 'DEEP DIVE' or 'DISCARD'" },
+      catalyst: { type: Type.STRING, description: "One sentence naming a concrete 'why now' catalyst, or 'None identified.'" },
     },
-    required: ["is_target_fit", "key_findings", "risk_factors", "growth_drivers", "fit_score", "action"],
+    required: ["is_target_fit", "key_findings", "risk_factors", "growth_drivers", "fit_score", "action", "catalyst"],
   };
 
   let geminiResult;
@@ -505,6 +531,7 @@ ${secContext}`;
       growth_drivers: "Not assessed.",
       fit_score: 0,
       action: "QUANT_ONLY",
+      catalyst: "Not assessed.",
     };
   } else {
   try {
@@ -554,7 +581,8 @@ ${secContext}`;
       growth_drivers: "Unable to assess.",
       fit_score: 0,
       // Key problems and quota both mean "AI didn't evaluate" → quant-only row.
-      action: (isQuota || isBadKey) ? "QUANT_ONLY" : "REVIEW"
+      action: (isQuota || isBadKey) ? "QUANT_ONLY" : "REVIEW",
+      catalyst: "Unable to assess."
     };
   }
   } // end else (had a key)
@@ -577,6 +605,7 @@ ${secContext}`;
     findings: geminiResult.key_findings,
     riskFactors: geminiResult.risk_factors,
     growthDrivers: geminiResult.growth_drivers,
+    catalyst: geminiResult.catalyst,
     decision: decisionEmoji,
     rawProfile,
     secData: secData || undefined,

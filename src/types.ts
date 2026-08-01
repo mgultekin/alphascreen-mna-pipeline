@@ -9,6 +9,8 @@ export interface SECData {
     operatingIncome?: number;
     stockholdersEquity?: number;
   };
+  recentEventCount?: number;
+  recentEventDates?: string[];
 }
 
 export interface ScreeningResult {
@@ -24,6 +26,7 @@ export interface ScreeningResult {
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;
+  catalyst?: string;
   decision: string;
   rawProfile?: string;
   secData?: SECData;
