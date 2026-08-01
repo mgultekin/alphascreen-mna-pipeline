@@ -143,7 +143,7 @@ persistence work in #9.
 - Keep the app usable **without** login (current flow stays the default).
 - **Done when:** a logged-in user can save a run and reopen it later.
 
-### 🔲 15. Show estimated analysis cost before running
+### ✅ 15. Show estimated analysis cost before running
 Display an estimated AI cost before/at run time, so users understand what a screen
 will consume against their own key.
 - Estimate = (tickers that would reach the AI stage) × per-call Gemini cost
