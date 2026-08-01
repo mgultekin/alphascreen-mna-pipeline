@@ -155,10 +155,10 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
       const usGaap = factsData.facts?.['us-gaap'];
       
       if (usGaap) {
-        // Helper: extract the most recent value for a concept
+        // Helper: extract the most recent value and its end date for a concept
         // Video insight: some concepts are deprecated or sparse, so we try
         // 10-K first (annual), fall back to 10-Q (quarterly) if needed
-        const getMostRecent = (concept: any): number | undefined => {
+        const getMostRecentFull = (concept: any): { val: number; end: string } | undefined => {
           if (!concept?.units) return undefined;
           const units = concept.units['USD'] || concept.units['USD/shares'];
           if (!units || !units.length) return undefined;
@@ -173,15 +173,44 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
           
           // Sort by end date descending to get most recent
           values.sort((a: any, b: any) => new Date(b.end).getTime() - new Date(a.end).getTime());
-          return values[0].val;
+          return { val: values[0].val, end: values[0].end };
+        };
+
+        // Wrapper to keep compatibility with other extractions
+        const getMostRecent = (concept: any): number | undefined => {
+          const res = getMostRecentFull(concept);
+          return res ? res.val : undefined;
         };
 
         // Revenue: companies use different XBRL concepts for revenue
-        // (some are deprecated, some are industry-specific)
-        const revenue = getMostRecent(usGaap.Revenues) 
-          || getMostRecent(usGaap.RevenueFromContractWithCustomerExcludingAssessedTax)
-          || getMostRecent(usGaap.SalesRevenueNet)
-          || getMostRecent(usGaap.SalesRevenueGoodsNet);
+        // (some are deprecated, some are industry-specific). We evaluate all
+        // to find the largest most recent headline figure.
+        const revConcepts = [
+          usGaap.Revenues,
+          usGaap.RevenueFromContractWithCustomerExcludingAssessedTax,
+          usGaap.SalesRevenueNet,
+          usGaap.SalesRevenueGoodsNet
+        ];
+        
+        let bestRev: { val: number; end: string } | undefined;
+        for (const concept of revConcepts) {
+          const current = getMostRecentFull(concept);
+          if (current) {
+            if (!bestRev) {
+              bestRev = current;
+            } else {
+              const currentTime = new Date(current.end).getTime();
+              const bestTime = new Date(bestRev.end).getTime();
+              if (currentTime > bestTime) {
+                bestRev = current;
+              } else if (currentTime === bestTime && current.val > bestRev.val) {
+                bestRev = current;
+              }
+            }
+          }
+        }
+        
+        const revenue = bestRev ? bestRev.val : undefined;
 
         xbrlFacts = {
           revenue,
