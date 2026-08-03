@@ -7,6 +7,16 @@ Status legend: 🔲 not started · 🟡 in progress · ✅ done
 
 ---
 
+## Shipped ✅
+
+**Pipeline & data:** revenue-extraction fix + annual-period hardening (#3, #3b) · real deal metrics in the AI context — EV/EBITDA, EV/Sales, Net Debt/EBITDA (#18, partial) · catalyst / "why now" signal from 8-K item codes (#19) · deterministic data-confidence signal · result caching (#5) · scoring reproducibility + rubric anchors (#17).
+
+**Product & UX:** bring-your-own-key + keyless demo mode · sector playbooks + thesis angles · graceful degradation + rate-limit banner · estimated cost before running (#15) · first-visit onboarding · financial-terminal redesign · mobile-responsive drawer · catalyst + confidence surfaced in results · branded favicon + link-preview meta.
+
+**Infra & repo:** deployed to Render (#1) · Vitest tests + GitHub Actions CI · CONTRIBUTING + ROADMAP · GitHub Sponsors + Buy Me a Coffee · product/scoring audit (#13).
+
+---
+
 ## Now — high value, well-scoped
 
 ### ✅ 1. Deploy + live demo link
@@ -48,7 +58,7 @@ instead of ~$391B because Apple reports under
 - **Done when:** AAPL, MSFT, and a few other large caps report their headline
   consolidated revenue.
 
-### 🔲 3b. Harden revenue period selection (follow-up to #3)
+### ✅ 3b. Harden revenue period selection (follow-up to #3)
 `getMostRecentFull` in `server.ts` picks the first entry at the latest fiscal
 year-end without explicitly confirming it's the 12-month annual period. It
 resolves correctly for all tickers tested so far (the across-concept
@@ -124,7 +134,7 @@ EV/EBITDA, EV/Sales, and Net Debt/EBITDA now flow into the **AI prompt context**
 (done, PR #10). Remaining: expose them as optional UI hard-stop filters and add
 peer-relative scoring within the sector cohort.
 
-### 🔲 19. Catalyst signal ("why now")
+### ✅ 19. Catalyst signal ("why now")
 Light NLP pass over recent filings/news for triggers (management change,
 strategic review, activist stake, spin-off) — the differentiator that turns a
 list into a pipeline.
