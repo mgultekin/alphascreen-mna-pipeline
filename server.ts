@@ -201,6 +201,19 @@ async function getCompanyCIK(ticker: string): Promise<string | null> {
   return cikMapCache ? (cikMapCache[ticker.toUpperCase()] || null) : null;
 }
 
+const EIGHT_K_ITEMS: Record<string, string> = {
+  '1.01': 'Material agreement',
+  '2.01': 'Completion of acquisition',
+  '2.05': 'Restructuring',
+  '3.01': 'Delisting notice',
+  '4.01': 'Auditor change',
+  '5.01': 'Change in control',
+  '5.02': 'Director/officer departure or appointment',
+  '7.01': 'Other event',
+  '8.01': 'Other event',
+  '9.01': 'Financial statements/exhibits',
+};
+
 // Fetch XBRL financial facts + filing metadata from SEC EDGAR
 async function fetchSECData(ticker: string): Promise<SECData | null> {
   const cached = secDataCache.get(ticker);
@@ -296,6 +309,7 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
       const dates = recent.filingDate || [];
       const desc = recent.primaryDocDescription || [];
       const accNums = recent.accessionNumber || [];
+      const itemsList = recent.items || [];
       
       const nowMs = Date.now();
       const DAYS_120_MS = 120 * 24 * 60 * 60 * 1000;
@@ -306,7 +320,14 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
           if (!isNaN(formDate.getTime()) && (nowMs - formDate.getTime() <= DAYS_120_MS)) {
             recentEventCount++;
             if (recentEventDates.length < 3) {
-              recentEventDates.push(dates[i]);
+              const itemsStr = itemsList[i] || '';
+              const rawItems = itemsStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+              if (rawItems.length > 0) {
+                const labels = rawItems.map((code: string) => EIGHT_K_ITEMS[code] || code);
+                recentEventDates.push(`${dates[i]} [${labels.join(', ')}]`);
+              } else {
+                recentEventDates.push(`${dates[i]} [${desc[i] || '8-K filing'}]`);
+              }
             }
           }
         } else if (forms[i] === '10-K' || forms[i] === '10-Q') {
@@ -459,7 +480,7 @@ Net Income: ${secData.xbrlFacts.netIncome ? '$' + (secData.xbrlFacts.netIncome /
 Total Assets: ${secData.xbrlFacts.totalAssets ? '$' + (secData.xbrlFacts.totalAssets / 1e6).toFixed(0) + 'M' : 'N/A'}
 Stockholders Equity: ${secData.xbrlFacts.stockholdersEquity ? '$' + (secData.xbrlFacts.stockholdersEquity / 1e6).toFixed(0) + 'M' : 'N/A'}
 Latest Filing: ${secData.recentFilings[0]?.form || 'N/A'} (${secData.recentFilings[0]?.filingDate || 'N/A'})
-Recent 8-K Filings (last 120 days): ${secData.recentEventCount || 0} events${secData.recentEventCount ? ' (Dates: ' + (secData.recentEventDates?.join(', ') || '') + ')' : ''}` : '';
+Recent 8-K events (120d): ${secData.recentEventDates?.length ? secData.recentEventDates.join(', ') : 'None'}` : '';
 
   // The analyst persona is driven by the selected screening preset, so the AI
   // reasons through the right sector lens (grocery vs. SaaS vs. banking, etc.).
