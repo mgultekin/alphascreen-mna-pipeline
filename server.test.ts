@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { getMostRecentFull, applyQuantitativeFilters } from './server';
+import { getMostRecentFull, applyQuantitativeFilters, computeConfidence } from './server';
 
 describe('SEC XBRL Extractor: getMostRecentFull', () => {
   test('returns undefined for empty or invalid concepts', () => {
@@ -104,5 +104,34 @@ describe('Quantitative Filters', () => {
     const res = applyQuantitativeFilters(config, baseMetrics, baseResult);
     expect(res).not.toBeNull();
     expect(res?.findings).toMatch(/Revenue Growth/);
+  });
+});
+
+describe('computeConfidence', () => {
+  test('returns High when most signals are present', () => {
+    const inputs = {
+      secData: { cik: '0000320193', xbrlFacts: { revenue: 1000 }, recentFilings: [], recentEventDates: ['2023-01-01 [8-K]'] },
+      rawProfile: 'A'.repeat(150),
+      evToEbitda: 15.5
+    };
+    expect(computeConfidence(inputs)).toBe('High');
+  });
+
+  test('returns Medium when some signals are present', () => {
+    const inputs = {
+      secData: { cik: '0000320193', xbrlFacts: { revenue: 1000 }, recentFilings: [], recentEventDates: [] },
+      rawProfile: 'A'.repeat(150),
+      evToEbitda: undefined
+    };
+    expect(computeConfidence(inputs)).toBe('Medium');
+  });
+
+  test('returns Low when few or no signals are present', () => {
+    const inputs = {
+      secData: null,
+      rawProfile: 'No business summary available.',
+      evToEbitda: undefined
+    };
+    expect(computeConfidence(inputs as any)).toBe('Low');
   });
 });

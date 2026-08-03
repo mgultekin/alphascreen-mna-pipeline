@@ -61,6 +61,7 @@ export interface ScreeningResult {
   peRatio?: number;
   revGrowthPct?: number;
   score: number | string;
+  confidence?: 'High' | 'Medium' | 'Low';
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;
@@ -138,6 +139,34 @@ export function applyQuantitativeFilters(
     return { ...baseResult, findings: `Screened out: Revenue Growth (${metrics.revGrowthPct.toFixed(1)}%) below ${config.minRevenueGrowth}% minimum`, decision: '⚪ SCREENED OUT' };
   }
   return null;
+}
+
+export function computeConfidence(inputs: {
+  secData?: SECData | null;
+  rawProfile?: string;
+  evToEbitda?: number;
+}): 'High' | 'Medium' | 'Low' {
+  let score = 0;
+  
+  if (inputs.secData?.cik && inputs.secData.xbrlFacts?.revenue) {
+    score += 1;
+  }
+  
+  if (inputs.rawProfile && inputs.rawProfile.length > 100 && !inputs.rawProfile.startsWith('No business summary')) {
+    score += 1;
+  }
+  
+  if (inputs.evToEbitda !== undefined && inputs.evToEbitda !== null) {
+    score += 1;
+  }
+  
+  if (inputs.secData?.recentEventDates && inputs.secData.recentEventDates.length > 0) {
+    score += 1;
+  }
+  
+  if (score >= 3) return 'High';
+  if (score === 2) return 'Medium';
+  return 'Low';
 }
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1000): Promise<T> {
@@ -612,6 +641,12 @@ ${secContext}`;
                          geminiResult.action === 'DISCARD' ? '🔴 DISCARD' :
                          geminiResult.action === 'QUANT_ONLY' ? '⚪ QUANT ONLY' : '🟡 REVIEW';
 
+  const confidence = computeConfidence({
+    secData,
+    rawProfile,
+    evToEbitda
+  });
+
   return {
     ticker,
     companyName,
@@ -623,6 +658,7 @@ ${secContext}`;
     revGrowthPct: parseFloat(revGrowthPct.toFixed(1)),
     // No real AI score when the AI didn't run (no key / bad key / quota) — show a dash.
     score: (aiStatus === 'quota' || aiStatus === 'nokey' || aiStatus === 'badkey') ? '-' : geminiResult.fit_score,
+    confidence,
     findings: geminiResult.key_findings,
     riskFactors: geminiResult.risk_factors,
     growthDrivers: geminiResult.growth_drivers,

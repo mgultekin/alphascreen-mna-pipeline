@@ -23,6 +23,7 @@ export interface ScreeningResult {
   peRatio?: number;
   revGrowthPct?: number;
   score: number | string;
+  confidence?: 'High' | 'Medium' | 'Low';
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;
