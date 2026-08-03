@@ -152,6 +152,14 @@ export default function ResultsTable({ results }: ResultsTableProps) {
                           </div>
                         )}
                       </div>
+                      {result.confidence && (
+                        <div
+                          className={`mt-1 text-[9px] font-mono uppercase tracking-wider ${result.confidence === 'Low' ? 'text-amber-500' : 'text-[#585550]'}`}
+                          title="Confidence in the underlying data (SEC filings, business summary, deal metrics)"
+                        >
+                          {result.confidence === 'Low' ? '⚠ low data' : `data: ${result.confidence}`}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <p className="line-clamp-2 text-xs opacity-90">{result.findings}</p>
