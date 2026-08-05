@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { getMostRecentFull, applyQuantitativeFilters, computeConfidence } from './server';
+import { getMostRecentFull, applyQuantitativeFilters, computeConfidence, computeTargetVulnerability } from './server';
 
 describe('SEC XBRL Extractor: getMostRecentFull', () => {
   test('returns undefined for empty or invalid concepts', () => {
@@ -133,5 +133,58 @@ describe('computeConfidence', () => {
       evToEbitda: undefined
     };
     expect(computeConfidence(inputs as any)).toBe('Low');
+  });
+});
+
+describe('computeTargetVulnerability', () => {
+  const cohortEbitda = [5, 10, 15, 20];
+  const cohortSales = [1, 3, 5, 7];
+
+  test('returns undefined when valuation data is entirely missing', () => {
+    // Should not yield a rating if neither EV/EBITDA nor EV/Sales is present
+    expect(computeTargetVulnerability({ 
+      evToEbitda: undefined, 
+      evToSales: undefined,
+      recentEventCount: 3
+    })).toBeUndefined();
+  });
+
+  test('a cheap distressed name must outrank an expensive megacap', () => {
+    const cheapDistressed = computeTargetVulnerability({
+      evToEbitda: 4, // extremely cheap (bottom 25%)
+      evToSales: 0.5, // extremely cheap
+      recentEventCount: 2, // in play (e.g. activist, restructuring)
+      stockUnderperformance: true, // lag vs market
+      dispersedOwnership: true, // dispersed ownership, easier target
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+
+    const expensiveMegacap = computeTargetVulnerability({
+      evToEbitda: 25, // very expensive
+      evToSales: 10,
+      recentEventCount: 0,
+      stockUnderperformance: false,
+      dispersedOwnership: false,
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+
+    expect(cheapDistressed).toBe('High');
+    expect(expensiveMegacap).toBe('Low');
+  });
+
+  test('an average performer with no events is Medium', () => {
+    const avg = computeTargetVulnerability({
+      evToEbitda: 12, // middle of cohort [5, 10, 15, 20]
+      evToSales: 4,
+      recentEventCount: 0,
+      stockUnderperformance: false,
+      dispersedOwnership: false,
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+    
+    expect(avg).toBe('Medium');
   });
 });
