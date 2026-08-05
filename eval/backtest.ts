@@ -1,5 +1,17 @@
 import { LABELED_SET } from './labeled-set';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
+
+// server.kill() only signals the `npm` parent — on Windows the tsx/vite child
+// (the actual :3000 server) survives and keeps the event loop alive, hanging the
+// script. Kill the whole process tree instead.
+function stopServer(server: ReturnType<typeof spawn>) {
+  if (server.pid === undefined) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    try { server.kill('SIGKILL'); } catch { /* already gone */ }
+  }
+}
 
 async function runBacktest() {
   console.log('Starting Backtest...');
@@ -28,7 +40,7 @@ async function runBacktest() {
 
   if (!isServerReady) {
     console.error('Failed to start local server, or it took too long.');
-    server.kill();
+    stopServer(server);
     process.exit(1);
   }
   
@@ -74,7 +86,7 @@ async function runBacktest() {
   } finally {
     // Kill the server
     console.log('Stopping dev server...');
-    server.kill();
+    stopServer(server);
   }
 
   console.log('\n--- Backtest Results ---');
@@ -119,6 +131,9 @@ async function runBacktest() {
   console.log(`Mean Control Score:  ${meanCtrl.toFixed(2)}`);
   console.log(`Separation:          ${separation > 0 ? '+' : ''}${separation.toFixed(2)} pts`);
   console.log(`Hit Rate (Acquired > Median): ${hitRate.toFixed(0)}%`);
+
+  // Force a clean exit — dangling child/stdio handles otherwise keep Node alive.
+  process.exit(0);
 }
 
 runBacktest().catch(err => {
