@@ -109,7 +109,11 @@ export default function ResultsTable({ results }: ResultsTableProps) {
               <th className="px-4 py-3 cursor-pointer hover:text-white transition" onClick={() => handleSort('marketCapB')}>
                 Mkt Cap <SortIcon columnKey="marketCapB" />
               </th>
-              <th className="px-4 py-3 cursor-pointer hover:text-white transition" onClick={() => handleSort('score')}>
+              <th
+                className="px-4 py-3 cursor-pointer hover:text-white transition"
+                onClick={() => handleSort('score')}
+                title="Strategic-fit score (1–10): how well the company matches your acquisition thesis. A fit assessment, not a price or acquisition prediction."
+              >
                 Score <SortIcon columnKey="score" />
               </th>
               <th className="px-4 py-3 w-1/4">AI Rationale</th>

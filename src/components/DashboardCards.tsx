@@ -149,7 +149,7 @@ export default function DashboardCards({ results }: DashboardCardsProps) {
       {/* Top Picks */}
       {topPicks.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-[#ece9e4] mb-4">Top AI Recommendations</h3>
+          <h3 className="text-xl font-semibold text-[#ece9e4] mb-4">Top Strategic-Fit Targets</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topPicks.map((pick, i) => (
               <div key={i} className="bg-[#16161a] border border-[#2b2b31] rounded-xl p-5 border-l-4 border-l-emerald-500 hover:bg-[#1f1f24] transition-colors cursor-pointer">
