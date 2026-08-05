@@ -136,7 +136,7 @@ Light NLP pass over recent filings/news for triggers (management change,
 strategic review, activist stake, spin-off) — the differentiator that turns a
 list into a pipeline.
 
-### 🔲 20. Target-vulnerability / undervaluation signal (from the acquisition backtest)
+### 🟡 20. Target-vulnerability / undervaluation signal (from the acquisition backtest)
 The backtest showed the fit score has **~zero separation** between takeover targets
 and independent peers — it measures strategic *fit / quality*, not acquisition
 *likelihood*. Add a separate signal for what makes a company a likely **target**:
@@ -144,6 +144,13 @@ cheap valuation vs. peers (low EV/EBITDA percentile), share underperformance, hi
 insider / low free float or activist ownership, weak governance. Surface it distinct
 from the fit score.
 - **Done when:** the backtest shows meaningful target-vs-control separation on this signal.
+
+_In review: [PR #22](https://github.com/mgultekin/alphascreen-mna-pipeline/pull/22) adds a
+first `computeTargetVulnerability()`. Changes requested — separation is **+0.13**, which
+flips sign if any single ticker moves, and the scale saturates (8/11 `High`, nothing
+`Low`), so it rates independents like LULU/EOG above an announced target (CPRI). Main
+fixes: weight the **substantive** 8-K item codes from #19 rather than a raw filing count,
+make valuation peer-relative, and never emit a rating when valuation data is missing._
 
 ### 🔲 14. User accounts + saved analyses
 Let users log in, save screening runs, and revisit past analyses. Builds on the
