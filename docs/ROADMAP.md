@@ -13,7 +13,7 @@ Status legend: 🔲 not started · 🟡 in progress · ✅ done
 
 **Product & UX:** bring-your-own-key + keyless demo mode · sector playbooks + thesis angles · graceful degradation + rate-limit banner · estimated cost before running (#15) · first-visit onboarding · financial-terminal redesign · mobile-responsive drawer · catalyst + confidence surfaced in results · branded favicon + link-preview meta.
 
-**Infra & repo:** deployed to Render (#1) · Vitest tests + GitHub Actions CI · CONTRIBUTING + ROADMAP · GitHub Sponsors + Buy Me a Coffee · product/scoring audit (#13).
+**Infra & repo:** deployed to Render (#1) · Vitest tests + GitHub Actions CI (#6) · evaluation harness / acquisition backtest · CONTRIBUTING + ROADMAP · GitHub Sponsors + Buy Me a Coffee · product/scoring audit (#13).
 
 ---
 
@@ -24,19 +24,16 @@ Deployed to Render via [`render.yaml`](../render.yaml) blueprint; live at
 https://alphascreen-mna-pipeline.onrender.com with the link in the README.
 Demo mode works fully. Live screening is limited on the host — see #12.
 
-### 🔲 12. Cloud-friendly market-data source (live mode on the deploy)
-On cloud hosts, Yahoo Finance 429s the server's IP (`Failed to get crumb`), so
-live screening fails on Render even though demo mode works. Local runs are fine
-(residential IP). For live mode to work on the deploy, add a datacenter-friendly
-quantitative source:
-- Integrate an API that doesn't IP-block (e.g. Financial Modeling Prep, Finnhub,
-  or Alpha Vantage free tier) as an alternative/fallback to Yahoo for market cap,
-  EBITDA margin, P/E, revenue growth, and the business summary.
-- Likely needs its own API key (server-side, or add to the bring-your-own-key
-  flow). Keep Yahoo as the local-dev default.
-- Interim: the UI now shows a clear "market data rate-limited" banner steering
-  visitors to the sample demo (done).
-- **Done when:** a live screen returns real quant data on the deployed site.
+### 🚫 12. Cloud-friendly market data — deferred (inherent data-licensing constraint)
+On cloud hosts Yahoo 429s the server's IP, so *live* screening only works locally
+(residential IP); demo mode works everywhere. **Decision after research:** don't chase
+this. Every free financial-data API (FMP, Finnhub, Alpha Vantage) restricts its free
+tier to personal/non-commercial use — there is no free "commercial-OK" price source,
+and SEC EDGAR has no prices at all. Our SEC + Yahoo stack is exactly what comparable
+open-source screeners use; commercial-grade data is paid (Capital IQ / Refinitiv),
+which is the documented production path. So: **keep the demo as the live showcase**;
+live screening stays a local feature. The rate-limit banner already steers cloud
+visitors to the demo. Revisit only if the project goes paid/commercial.
 
 ### 🔲 2. Automate ticker sourcing via SEC SIC codes
 Today the sector ticker lists in `src/presets.ts` are hand-curated. SEC EDGAR
@@ -84,7 +81,7 @@ via the header "?" button._
 In-memory TTL cache for Yahoo (1h) + SEC (24h) responses; cache-hit logging;
 Gemini deliberately uncached. Done in `server.ts`.
 
-### 🔲 6. Automated tests
+### ✅ 6. Automated tests
 Add a lightweight test setup (e.g. Vitest) covering the quant-filter logic, the
 XBRL `getMostRecent` reducer, and the SSE result shaping. Wire a GitHub Actions
 CI that runs `npm run lint` + tests on every PR.
@@ -139,10 +136,14 @@ Light NLP pass over recent filings/news for triggers (management change,
 strategic review, activist stake, spin-off) — the differentiator that turns a
 list into a pipeline.
 
-### 🔲 14. User accounts + saved analyses
-Let users log in, save screening runs, and revisit past analyses. Builds on the
-persistence work in #9.
-- Auth: a hosted option (Clerk / Auth.js / Supabase Auth) to avoid handrolling
+### 🔲 20. Target-vulnerability / undervaluation signal (from the acquisition backtest)
+The backtest showed the fit score has **~zero separation** between takeover targets
+and independent peers — it measures strategic *fit / quality*, not acquisition
+*likelihood*. Add a separate signal for what makes a company a likely **target**:
+cheap valuation vs. peers (low EV/EBITDA percentile), share underperformance, high
+insider / low free float or activist ownership, weak governance. Surface it distinct
+from the fit score.
+- **Done when:** the backtest shows meaningful target-vs-control separation on this signal.
 
 ### 🔲 14. User accounts + saved analyses
 Let users log in, save screening runs, and revisit past analyses. Builds on the
