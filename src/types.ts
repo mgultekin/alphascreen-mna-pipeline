@@ -24,6 +24,7 @@ export interface ScreeningResult {
   revGrowthPct?: number;
   score: number | string;
   confidence?: 'High' | 'Medium' | 'Low';
+  targetVulnerability?: 'High' | 'Medium' | 'Low';
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;

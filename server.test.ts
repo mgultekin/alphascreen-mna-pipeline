@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { getMostRecentFull, applyQuantitativeFilters, computeConfidence } from './server';
+import { getMostRecentFull, applyQuantitativeFilters, computeConfidence, computeTargetVulnerability } from './server';
 
 describe('SEC XBRL Extractor: getMostRecentFull', () => {
   test('returns undefined for empty or invalid concepts', () => {
@@ -133,5 +133,40 @@ describe('computeConfidence', () => {
       evToEbitda: undefined
     };
     expect(computeConfidence(inputs as any)).toBe('Low');
+  });
+});
+
+describe('computeTargetVulnerability', () => {
+  test('returns High when cheap and in play', () => {
+    const inputs = {
+      evToEbitda: 8,
+      evToSales: 1.0,
+      recentEventCount: 2,
+      netDebtToEbitda: 3
+    };
+    // Base 5 + 2 (cheap EBITDA) + 1 (cheap Sales) + 2 (in play) + 1 (financeable) = 11 -> clamped to High (>= 7)
+    expect(computeTargetVulnerability(inputs)).toBe('High');
+  });
+
+  test('returns Medium for average companies', () => {
+    const inputs = {
+      evToEbitda: 12,
+      evToSales: 3,
+      recentEventCount: 0,
+      netDebtToEbitda: 5
+    };
+    // Base 5 + 0 + 0 + 0 + 0 = 5 -> Medium
+    expect(computeTargetVulnerability(inputs)).toBe('Medium');
+  });
+
+  test('returns Low for expensive, no-event, high-debt companies', () => {
+    const inputs = {
+      evToEbitda: 20,
+      evToSales: 6,
+      recentEventCount: 0,
+      netDebtToEbitda: 7
+    };
+    // Base 5 - 2 (expensive EBITDA) - 1 (expensive Sales) + 0 - 1 (high debt) = 1 -> Low
+    expect(computeTargetVulnerability(inputs)).toBe('Low');
   });
 });

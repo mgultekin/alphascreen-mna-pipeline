@@ -62,6 +62,7 @@ export interface ScreeningResult {
   revGrowthPct?: number;
   score: number | string;
   confidence?: 'High' | 'Medium' | 'Low';
+  targetVulnerability?: 'High' | 'Medium' | 'Low';
   findings: string;
   riskFactors?: string;
   growthDrivers?: string;
@@ -167,6 +168,38 @@ export function computeConfidence(inputs: {
   if (score >= 3) return 'High';
   if (score === 2) return 'Medium';
   return 'Low';
+}
+
+export function computeTargetVulnerability(inputs: {
+  evToEbitda?: number;
+  evToSales?: number;
+  recentEventCount?: number;
+  netDebtToEbitda?: number;
+}): 'High' | 'Medium' | 'Low' {
+  let score = 5; // Base score (Neutral)
+  
+  if (inputs.evToEbitda !== undefined && inputs.evToEbitda !== null) {
+    if (inputs.evToEbitda < 9) score += 2; // Valuation cheapness
+    else if (inputs.evToEbitda > 15) score -= 2;
+  }
+
+  if (inputs.evToSales !== undefined && inputs.evToSales !== null) {
+    if (inputs.evToSales < 1.5) score += 1;
+    else if (inputs.evToSales > 5) score -= 1;
+  }
+  
+  if (inputs.recentEventCount && inputs.recentEventCount > 0) {
+    score += 2; // "In play" / recent 8-K activity
+  }
+  
+  if (inputs.netDebtToEbitda !== undefined && inputs.netDebtToEbitda !== null) {
+    if (inputs.netDebtToEbitda < 4) score += 1; // Financeable
+    else if (inputs.netDebtToEbitda > 6) score -= 1;
+  }
+  
+  if (score >= 7) return 'High';
+  if (score <= 4) return 'Low';
+  return 'Medium';
 }
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1000): Promise<T> {
@@ -647,6 +680,13 @@ ${secContext}`;
     evToEbitda
   });
 
+  const targetVulnerability = computeTargetVulnerability({
+    evToEbitda,
+    evToSales,
+    recentEventCount: secData?.recentEventCount,
+    netDebtToEbitda
+  });
+
   return {
     ticker,
     companyName,
@@ -659,6 +699,7 @@ ${secContext}`;
     // No real AI score when the AI didn't run (no key / bad key / quota) — show a dash.
     score: (aiStatus === 'quota' || aiStatus === 'nokey' || aiStatus === 'badkey') ? '-' : geminiResult.fit_score,
     confidence,
+    targetVulnerability,
     findings: geminiResult.key_findings,
     riskFactors: geminiResult.risk_factors,
     growthDrivers: geminiResult.growth_drivers,

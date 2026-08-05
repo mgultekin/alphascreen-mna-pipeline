@@ -92,14 +92,25 @@ async function runBacktest() {
   console.log('\n--- Backtest Results ---');
   let acquiredScores: number[] = [];
   let controlScores: number[] = [];
+  let acquiredVuln: number[] = [];
+  let controlVuln: number[] = [];
   let validResults = 0;
+
+  const mapVuln = (v: string | undefined) => {
+    if (v === 'High') return 3;
+    if (v === 'Medium') return 2;
+    if (v === 'Low') return 1;
+    return null;
+  };
 
   for (const item of LABELED_SET) {
     const result = results.find(r => r.ticker === item.ticker);
     const score = result?.score;
     const numericScore = typeof score === 'number' ? score : null;
+    const vulnLabel = result?.targetVulnerability || 'N/A';
+    const numericVuln = mapVuln(result?.targetVulnerability);
     
-    console.log(`${item.ticker.padEnd(6)} | ${item.category.padEnd(9)} | Score: ${numericScore !== null ? numericScore : 'N/A'} | ${item.note}`);
+    console.log(`${item.ticker.padEnd(6)} | ${item.category.padEnd(9)} | Fit: ${numericScore !== null ? String(numericScore).padEnd(4) : 'N/A '} | Vuln: ${vulnLabel.padEnd(6)} | ${item.note}`);
     if (result && result.findings && numericScore === null) {
       console.log(`         (${result.findings})`);
     }
@@ -109,10 +120,15 @@ async function runBacktest() {
       else controlScores.push(numericScore);
       validResults++;
     }
+    
+    if (numericVuln !== null) {
+      if (item.category === 'Acquired') acquiredVuln.push(numericVuln);
+      else controlVuln.push(numericVuln);
+    }
   }
 
-  if (validResults === 0) {
-    console.log('\nNo numeric scores retrieved. (Missing Gemini API key or quota exceeded?)');
+  if (validResults === 0 && acquiredVuln.length === 0) {
+    console.log('\nNo results retrieved. (Missing Gemini API key or quota exceeded?)');
     process.exit(1);
   }
 
@@ -120,17 +136,25 @@ async function runBacktest() {
   const meanCtrl = controlScores.reduce((a, b) => a + b, 0) / (controlScores.length || 1);
   const separation = meanAcq - meanCtrl;
 
+  const meanAcqVuln = acquiredVuln.reduce((a, b) => a + b, 0) / (acquiredVuln.length || 1);
+  const meanCtrlVuln = controlVuln.reduce((a, b) => a + b, 0) / (controlVuln.length || 1);
+  const separationVuln = meanAcqVuln - meanCtrlVuln;
+
   const allScores = [...acquiredScores, ...controlScores].sort((a, b) => a - b);
   const median = allScores[Math.floor(allScores.length / 2)] || 0;
-  
   const acqHits = acquiredScores.filter(s => s > median).length;
   const hitRate = (acqHits / (acquiredScores.length || 1)) * 100;
 
-  console.log('\n--- Summary ---');
-  console.log(`Mean Acquired Score: ${meanAcq.toFixed(2)}`);
-  console.log(`Mean Control Score:  ${meanCtrl.toFixed(2)}`);
-  console.log(`Separation:          ${separation > 0 ? '+' : ''}${separation.toFixed(2)} pts`);
+  console.log('\n--- Summary: Fit Score ---');
+  console.log(`Mean Acquired Fit: ${meanAcq.toFixed(2)}`);
+  console.log(`Mean Control Fit:  ${meanCtrl.toFixed(2)}`);
+  console.log(`Separation:        ${separation > 0 ? '+' : ''}${separation.toFixed(2)} pts`);
   console.log(`Hit Rate (Acquired > Median): ${hitRate.toFixed(0)}%`);
+
+  console.log('\n--- Summary: Target Vulnerability (High=3, Med=2, Low=1) ---');
+  console.log(`Mean Acquired Vuln: ${meanAcqVuln.toFixed(2)}`);
+  console.log(`Mean Control Vuln:  ${meanCtrlVuln.toFixed(2)}`);
+  console.log(`Separation:         ${separationVuln > 0 ? '+' : ''}${separationVuln.toFixed(2)} pts`);
 
   // Force a clean exit — dangling child/stdio handles otherwise keep Node alive.
   process.exit(0);
