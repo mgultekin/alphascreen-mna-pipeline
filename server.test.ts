@@ -137,36 +137,54 @@ describe('computeConfidence', () => {
 });
 
 describe('computeTargetVulnerability', () => {
-  test('returns High when cheap and in play', () => {
-    const inputs = {
-      evToEbitda: 8,
-      evToSales: 1.0,
-      recentEventCount: 2,
-      netDebtToEbitda: 3
-    };
-    // Base 5 + 2 (cheap EBITDA) + 1 (cheap Sales) + 2 (in play) + 1 (financeable) = 11 -> clamped to High (>= 7)
-    expect(computeTargetVulnerability(inputs)).toBe('High');
+  const cohortEbitda = [5, 10, 15, 20];
+  const cohortSales = [1, 3, 5, 7];
+
+  test('returns undefined when valuation data is entirely missing', () => {
+    // Should not yield a rating if neither EV/EBITDA nor EV/Sales is present
+    expect(computeTargetVulnerability({ 
+      evToEbitda: undefined, 
+      evToSales: undefined,
+      recentEventCount: 3
+    })).toBeUndefined();
   });
 
-  test('returns Medium for average companies', () => {
-    const inputs = {
-      evToEbitda: 12,
-      evToSales: 3,
+  test('a cheap distressed name must outrank an expensive megacap', () => {
+    const cheapDistressed = computeTargetVulnerability({
+      evToEbitda: 4, // extremely cheap (bottom 25%)
+      evToSales: 0.5, // extremely cheap
+      recentEventCount: 2, // in play (e.g. activist, restructuring)
+      stockUnderperformance: true, // lag vs market
+      dispersedOwnership: true, // dispersed ownership, easier target
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+
+    const expensiveMegacap = computeTargetVulnerability({
+      evToEbitda: 25, // very expensive
+      evToSales: 10,
       recentEventCount: 0,
-      netDebtToEbitda: 5
-    };
-    // Base 5 + 0 + 0 + 0 + 0 = 5 -> Medium
-    expect(computeTargetVulnerability(inputs)).toBe('Medium');
+      stockUnderperformance: false,
+      dispersedOwnership: false,
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+
+    expect(cheapDistressed).toBe('High');
+    expect(expensiveMegacap).toBe('Low');
   });
 
-  test('returns Low for expensive, no-event, high-debt companies', () => {
-    const inputs = {
-      evToEbitda: 20,
-      evToSales: 6,
+  test('an average performer with no events is Medium', () => {
+    const avg = computeTargetVulnerability({
+      evToEbitda: 12, // middle of cohort [5, 10, 15, 20]
+      evToSales: 4,
       recentEventCount: 0,
-      netDebtToEbitda: 7
-    };
-    // Base 5 - 2 (expensive EBITDA) - 1 (expensive Sales) + 0 - 1 (high debt) = 1 -> Low
-    expect(computeTargetVulnerability(inputs)).toBe('Low');
+      stockUnderperformance: false,
+      dispersedOwnership: false,
+      cohortEvToEbitda: cohortEbitda,
+      cohortEvToSales: cohortSales
+    });
+    
+    expect(avg).toBe('Medium');
   });
 });

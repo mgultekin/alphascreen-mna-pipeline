@@ -174,28 +174,46 @@ export function computeTargetVulnerability(inputs: {
   evToEbitda?: number;
   evToSales?: number;
   recentEventCount?: number;
-  netDebtToEbitda?: number;
-}): 'High' | 'Medium' | 'Low' {
-  let score = 5; // Base score (Neutral)
-  
-  if (inputs.evToEbitda !== undefined && inputs.evToEbitda !== null) {
-    if (inputs.evToEbitda < 9) score += 2; // Valuation cheapness
-    else if (inputs.evToEbitda > 15) score -= 2;
+  cohortEvToEbitda?: number[];
+  cohortEvToSales?: number[];
+  stockUnderperformance?: boolean;
+  dispersedOwnership?: boolean;
+}): 'High' | 'Medium' | 'Low' | undefined {
+  if (
+    (inputs.evToEbitda === undefined || inputs.evToEbitda === null) &&
+    (inputs.evToSales === undefined || inputs.evToSales === null)
+  ) {
+    return undefined;
   }
 
-  if (inputs.evToSales !== undefined && inputs.evToSales !== null) {
-    if (inputs.evToSales < 1.5) score += 1;
-    else if (inputs.evToSales > 5) score -= 1;
+  let score = 5; // Base score (Neutral)
+  
+  const getPercentile = (val: number, arr?: number[]) => {
+    if (!arr || arr.length === 0) return 0.5;
+    const sorted = [...arr].sort((a, b) => a - b);
+    let idx = sorted.findIndex(v => v >= val);
+    if (idx === -1) idx = sorted.length - 1;
+    return idx / sorted.length;
+  };
+  
+  if (inputs.evToEbitda !== undefined && inputs.evToEbitda !== null && inputs.evToEbitda > 0) {
+    const validCohort = (inputs.cohortEvToEbitda || []).filter(v => v > 0);
+    const pct = getPercentile(inputs.evToEbitda, validCohort);
+    if (pct <= 0.33) score += 2; // Bottom third (cheapest)
+    else if (pct >= 0.66) score -= 2; // Top third (expensive)
+  } else if (inputs.evToSales !== undefined && inputs.evToSales !== null && inputs.evToSales > 0) {
+    const validCohort = (inputs.cohortEvToSales || []).filter(v => v > 0);
+    const pct = getPercentile(inputs.evToSales, validCohort);
+    if (pct <= 0.33) score += 1;
+    else if (pct >= 0.66) score -= 1;
   }
   
   if (inputs.recentEventCount && inputs.recentEventCount > 0) {
-    score += 2; // "In play" / recent 8-K activity
+    score += 1; // "In play" / substantive activity (flat +1)
   }
   
-  if (inputs.netDebtToEbitda !== undefined && inputs.netDebtToEbitda !== null) {
-    if (inputs.netDebtToEbitda < 4) score += 1; // Financeable
-    else if (inputs.netDebtToEbitda > 6) score -= 1;
-  }
+  if (inputs.stockUnderperformance) score += 1;
+  if (inputs.dispersedOwnership) score += 1;
   
   if (score >= 7) return 'High';
   if (score <= 4) return 'Low';
@@ -380,10 +398,16 @@ async function fetchSECData(ticker: string): Promise<SECData | null> {
         const formDate = new Date(dates[i]);
         if (forms[i] === '8-K') {
           if (!isNaN(formDate.getTime()) && (nowMs - formDate.getTime() <= DAYS_120_MS)) {
-            recentEventCount++;
+            const itemsStr = itemsList[i] || '';
+            const rawItems = itemsStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+            
+            const substantiveCodes = ['2.05', '3.01', '5.01'];
+            const hasSubstantive = rawItems.some((code: string) => substantiveCodes.includes(code));
+            
+            if (hasSubstantive) {
+              recentEventCount++;
+            }
             if (recentEventDates.length < 3) {
-              const itemsStr = itemsList[i] || '';
-              const rawItems = itemsStr.split(',').map((s: string) => s.trim()).filter(Boolean);
               if (rawItems.length > 0) {
                 const labels = rawItems.map((code: string) => EIGHT_K_ITEMS[code] || code);
                 recentEventDates.push(`${dates[i]} [${labels.join(', ')}]`);
@@ -433,6 +457,8 @@ async function screenSingleTicker(ticker: string, config: {
   userCriteria: string;
   analystRole?: string;
   apiKey?: string;
+  cohortEvToEbitda?: number[];
+  cohortEvToSales?: number[];
 }): Promise<ScreeningResult> {
   const dataSources = ['Yahoo Finance'];
   
@@ -497,10 +523,13 @@ async function screenSingleTicker(ticker: string, config: {
 
   const evToEbitda = defaultKeyStatistics.enterpriseToEbitda;
   const evToSales = defaultKeyStatistics.enterpriseToRevenue;
-  let netDebtToEbitda: number | undefined;
-  if (financialData.ebitda && financialData.ebitda > 0 && financialData.totalDebt !== undefined && financialData.totalCash !== undefined) {
-    netDebtToEbitda = (financialData.totalDebt - financialData.totalCash) / financialData.ebitda;
-  }
+  
+  const heldPercentInsiders = defaultKeyStatistics.heldPercentInsiders || 0;
+  const dispersedOwnership = heldPercentInsiders < 0.05; // <5% insiders -> easier target
+  
+  const week52Change = defaultKeyStatistics['52WeekChange'] || 0;
+  const sp52WeekChange = defaultKeyStatistics['SandP52WeekChange'] || 0;
+  const stockUnderperformance = week52Change < (sp52WeekChange - 0.30); // 30% lag
 
   // Base result for screened-out companies
   const baseResult: ScreeningResult = {
@@ -578,7 +607,8 @@ P/E Ratio: ${peRatio ? peRatio.toFixed(1) : 'N/A'}
 Revenue Growth: ${revGrowthPct.toFixed(1)}%
 EV/EBITDA: ${evToEbitda != null ? evToEbitda.toFixed(1) + 'x' : 'N/A'}
 EV/Sales: ${evToSales != null ? evToSales.toFixed(1) + 'x' : 'N/A'}
-Net Debt/EBITDA: ${netDebtToEbitda != null ? netDebtToEbitda.toFixed(1) + 'x' : 'N/A'}
+Stock underperformance vs S&P: ${stockUnderperformance ? 'Yes (>30% lag)' : 'No'}
+Dispersed Ownership: ${dispersedOwnership ? 'Yes (<5% insider)' : 'No'}
 
 --- Business Profile ---
 ${rawProfile}
@@ -684,7 +714,10 @@ ${secContext}`;
     evToEbitda,
     evToSales,
     recentEventCount: secData?.recentEventCount,
-    netDebtToEbitda
+    cohortEvToEbitda: config.cohortEvToEbitda,
+    cohortEvToSales: config.cohortEvToSales,
+    stockUnderperformance,
+    dispersedOwnership
   });
 
   return {
@@ -760,12 +793,38 @@ app.post("/api/batch-screen", async (req, res) => {
   const CONCURRENCY = 3;
   let completed = 0;
   
+  // PRE-FETCH FOR COHORT PERCENTILES
+  const summaries: any[] = [];
+  sendEvent({ type: 'progress', message: 'Pre-fetching market data for cohort percentiles...' });
+  for (let i = 0; i < tickers.length; i += CONCURRENCY) {
+    const batch = tickers.slice(i, i + CONCURRENCY);
+    const batchRes = await Promise.all(batch.map(async (ticker) => {
+      try {
+        const summary = await withRetry(() => yahooFinance.quoteSummary(ticker, { 
+          modules: ['assetProfile', 'financialData', 'summaryDetail', 'defaultKeyStatistics'] 
+        })) as any;
+        yahooSummaryCache.set(ticker, { data: summary, timestamp: Date.now() });
+        return {
+          ticker,
+          evToEbitda: summary.defaultKeyStatistics?.enterpriseToEbitda,
+          evToSales: summary.defaultKeyStatistics?.enterpriseToRevenue
+        };
+      } catch(e) {
+        return { ticker };
+      }
+    }));
+    summaries.push(...batchRes);
+  }
+  
+  const cohortEvToEbitda = summaries.map(s => s.evToEbitda).filter(v => v != null) as number[];
+  const cohortEvToSales = summaries.map(s => s.evToSales).filter(v => v != null) as number[];
+
   // Use a semaphore pattern
   const processTicker = async (ticker: string) => {
     sendEvent({ type: 'progress', message: `Analyzing ${ticker}...`, ticker });
     
     try {
-      const result = await screenSingleTicker(ticker, { maxMarketCap, minEbitda, maxPeRatio, minRevenueGrowth, userCriteria, analystRole, apiKey });
+      const result = await screenSingleTicker(ticker, { maxMarketCap, minEbitda, maxPeRatio, minRevenueGrowth, userCriteria, analystRole, apiKey, cohortEvToEbitda, cohortEvToSales });
       completed++;
       sendEvent({ type: 'result', data: result });
     } catch (error: any) {

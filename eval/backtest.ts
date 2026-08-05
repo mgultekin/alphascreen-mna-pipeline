@@ -95,6 +95,11 @@ async function runBacktest() {
   let acquiredVuln: number[] = [];
   let controlVuln: number[] = [];
   let validResults = 0;
+  
+  const counts: Record<string, any> = {
+    Acquired: { High: 0, Medium: 0, Low: 0 },
+    Control: { High: 0, Medium: 0, Low: 0 }
+  };
 
   const mapVuln = (v: string | undefined) => {
     if (v === 'High') return 3;
@@ -124,6 +129,10 @@ async function runBacktest() {
     if (numericVuln !== null) {
       if (item.category === 'Acquired') acquiredVuln.push(numericVuln);
       else controlVuln.push(numericVuln);
+      
+      if (vulnLabel === 'High') counts[item.category].High++;
+      else if (vulnLabel === 'Medium') counts[item.category].Medium++;
+      else if (vulnLabel === 'Low') counts[item.category].Low++;
     }
   }
 
@@ -152,9 +161,18 @@ async function runBacktest() {
   console.log(`Hit Rate (Acquired > Median): ${hitRate.toFixed(0)}%`);
 
   console.log('\n--- Summary: Target Vulnerability (High=3, Med=2, Low=1) ---');
-  console.log(`Mean Acquired Vuln: ${meanAcqVuln.toFixed(2)}`);
-  console.log(`Mean Control Vuln:  ${meanCtrlVuln.toFixed(2)}`);
+  console.log(`Mean Acquired Vuln: ${meanAcqVuln.toFixed(2)} (n=${acquiredVuln.length})`);
+  console.log(`Mean Control Vuln:  ${meanCtrlVuln.toFixed(2)} (n=${controlVuln.length})`);
   console.log(`Separation:         ${separationVuln > 0 ? '+' : ''}${separationVuln.toFixed(2)} pts`);
+  
+  console.log(`\nAcquired Distribution: High: ${counts.Acquired.High} | Med: ${counts.Acquired.Medium} | Low: ${counts.Acquired.Low}`);
+  console.log(`Control Distribution:  High: ${counts.Control.High} | Med: ${counts.Control.Medium} | Low: ${counts.Control.Low}`);
+
+  const allVulnScores = [...acquiredVuln, ...controlVuln].sort((a, b) => a - b);
+  const medianVuln = allVulnScores[Math.floor(allVulnScores.length / 2)] || 0;
+  const acqVulnHits = acquiredVuln.filter(s => s > medianVuln).length;
+  const hitRateVuln = (acqVulnHits / (acquiredVuln.length || 1)) * 100;
+  console.log(`Hit Rate (Acquired > Median): ${hitRateVuln.toFixed(0)}%`);
 
   // Force a clean exit — dangling child/stdio handles otherwise keep Node alive.
   process.exit(0);
